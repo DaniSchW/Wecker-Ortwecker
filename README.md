@@ -158,8 +158,24 @@ abzuarbeiten):
    beantragen") mit Begründung/Screenshots – ohne Freigabe wird die App beim
    Veröffentlichen abgelehnt.
 
-Die weiteren Phasen (Erweiterungen, Werbung/Monetarisierung, Testing/Release)
-sind noch offen.
+**Phase 5 – Erweiterung: Schlummern (Snooze)** ist umgesetzt:
+
+- Neuer „Schlummern"-Button im Klingel-Overlay des Standard-Weckers, zusätzlich
+  zum bisherigen Swipe-zum-Stoppen. Swipe stoppt weiterhin vollständig, der
+  neue Button schlummert.
+- Pro Wecker im Editor einstellbar: Schlummern erlauben (Standard: an) und
+  Schlummerdauer (5/10/15/20/30 Minuten, Standard: 10). Bereits vor Phase 5
+  angelegte Wecker verhalten sich automatisch wie „Schlummern an, 10 Minuten"
+  (kein Migrationsschritt nötig).
+- Schlummern plant eine einzelne zusätzliche Benachrichtigung in
+  `jetzt + Schlummerdauer`, unabhängig vom regulären Wiederholungs-Schedule
+  des Weckers (Wochentage/Einmalig bleiben unangetastet). Ein einmaliger
+  Wecker wird deshalb erst beim echten Stopp deaktiviert, nicht beim
+  Schlummern.
+- Wird ein Wecker gelöscht oder ausgeschaltet, während ein Schlummern
+  aussteht, wird auch die geplante Schlummer-Benachrichtigung storniert.
+
+Die weiteren Phasen (Werbung/Monetarisierung, Testing/Release) sind noch offen.
 
 ## Entwicklung
 

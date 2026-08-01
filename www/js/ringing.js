@@ -1,9 +1,10 @@
 (function () {
   'use strict';
 
-  var overlay, titleEl, timeEl, swipeTrack, swipeHandle, swipeHint;
+  var overlay, titleEl, timeEl, swipeTrack, swipeHandle, swipeHint, snoozeBtn;
   var activeAlarm = null;
   var onStopCallback = null;
+  var onSnoozeCallback = null;
 
   function formatNow() {
     var d = new Date();
@@ -54,13 +55,15 @@
     window.addEventListener('touchend', pointerUp);
   }
 
-  function show(alarm, stopCallback) {
+  function show(alarm, stopCallback, snoozeCallback) {
     activeAlarm = alarm;
     onStopCallback = stopCallback;
+    onSnoozeCallback = alarm.snoozeEnabled !== false ? snoozeCallback : null;
 
     titleEl.textContent = alarm.label && alarm.label.trim() ? alarm.label : window.i18n.t('alarm.defaultRingingTitle');
     timeEl.textContent = alarm.time || formatNow();
     swipeHint.textContent = window.i18n.t('alarm.swipeToStop');
+    snoozeBtn.hidden = !onSnoozeCallback;
     resetSwipe();
 
     overlay.classList.add('is-visible');
@@ -69,15 +72,31 @@
     window.alarmSound.start(alarm.sound || 'both');
   }
 
-  function stop() {
+  function close() {
     window.alarmSound.stop();
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
+  }
+
+  function stop() {
+    close();
     var alarm = activeAlarm;
     var cb = onStopCallback;
     activeAlarm = null;
     onStopCallback = null;
+    onSnoozeCallback = null;
     if (cb) cb(alarm);
+  }
+
+  function snooze() {
+    if (!onSnoozeCallback) return;
+    close();
+    var alarm = activeAlarm;
+    var cb = onSnoozeCallback;
+    activeAlarm = null;
+    onStopCallback = null;
+    onSnoozeCallback = null;
+    cb(alarm);
   }
 
   function init() {
@@ -87,6 +106,8 @@
     swipeTrack = document.getElementById('ringing-swipe-track');
     swipeHandle = document.getElementById('ringing-swipe-handle');
     swipeHint = document.getElementById('ringing-swipe-hint');
+    snoozeBtn = document.getElementById('ringing-snooze-btn');
+    snoozeBtn.addEventListener('click', snooze);
     setupSwipe();
   }
 

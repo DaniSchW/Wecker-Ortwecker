@@ -5,6 +5,7 @@
   var DAY_KEYS = ['weekday.mon', 'weekday.tue', 'weekday.wed', 'weekday.thu', 'weekday.fri', 'weekday.sat', 'weekday.sun'];
 
   var grid, modal, form, timeInput, labelInput, soundInputs, dayButtons, deleteBtn, modalTitle;
+  var snoozeEnabledCheckbox, snoozeOptions, snoozeMinutesSelect;
   var editingId = null;
 
   function formatDays(days) {
@@ -77,8 +78,16 @@
       scheduleAlarm(alarm);
     } else {
       window.Notify.cancel(alarm.notificationIds || []);
+      cancelSnooze(alarm);
     }
     render();
+  }
+
+  function cancelSnooze(alarm) {
+    if (!alarm.snoozeNotificationId) return;
+    window.Notify.cancel([alarm.snoozeNotificationId]);
+    alarm.snoozeNotificationId = null;
+    window.storage.alarms.upsert(alarm);
   }
 
   function openEditor(id) {
@@ -100,8 +109,16 @@
       input.checked = input.value === sound;
     });
 
+    snoozeEnabledCheckbox.checked = alarm ? alarm.snoozeEnabled !== false : true;
+    snoozeMinutesSelect.value = String(alarm && alarm.snoozeMinutes ? alarm.snoozeMinutes : 10);
+    updateSnoozeVisibility();
+
     deleteBtn.hidden = !alarm;
     modal.classList.add('is-visible');
+  }
+
+  function updateSnoozeVisibility() {
+    snoozeOptions.hidden = !snoozeEnabledCheckbox.checked;
   }
 
   function defaultTime() {
@@ -181,6 +198,8 @@
     alarm.label = labelInput.value.trim();
     alarm.days = days;
     alarm.sound = sound;
+    alarm.snoozeEnabled = snoozeEnabledCheckbox.checked;
+    alarm.snoozeMinutes = parseInt(snoozeMinutesSelect.value, 10) || 10;
     if (alarm.enabled === undefined) alarm.enabled = true;
 
     window.storage.alarms.upsert(alarm);
@@ -192,10 +211,28 @@
   function deleteAlarm() {
     if (!editingId) return;
     var alarm = window.storage.alarms.getAll().find(function (a) { return a.id === editingId; });
-    if (alarm) window.Notify.cancel(alarm.notificationIds || []);
+    if (alarm) {
+      window.Notify.cancel(alarm.notificationIds || []);
+      if (alarm.snoozeNotificationId) window.Notify.cancel([alarm.snoozeNotificationId]);
+    }
     window.storage.alarms.remove(editingId);
     closeEditor();
     render();
+  }
+
+  function handleSnooze(alarm) {
+    var minutes = alarm.snoozeMinutes || 10;
+    var id = window.Notify.nextId();
+    window.Notify.schedule([{
+      id: id,
+      title: alarm.label || window.i18n.t('alarm.defaultRingingTitle'),
+      body: window.i18n.t('alarm.snoozedNotificationBody'),
+      channelId: window.Notify.channelFor(alarm.sound),
+      schedule: { at: new Date(Date.now() + minutes * 60000) },
+      extra: { type: 'alarm', alarmId: alarm.id }
+    }]);
+    alarm.snoozeNotificationId = id;
+    window.storage.alarms.upsert(alarm);
   }
 
   function handleFire(evt) {
@@ -203,15 +240,17 @@
     if (!extra || extra.type !== 'alarm') return;
     var alarm = window.storage.alarms.getAll().find(function (a) { return a.id === extra.alarmId; });
     if (!alarm) return;
+    alarm.snoozeNotificationId = null;
 
     window.ringing.show(alarm, function (stoppedAlarm) {
       if (!stoppedAlarm.days.length) {
         stoppedAlarm.enabled = false;
         stoppedAlarm.notificationIds = [];
-        window.storage.alarms.upsert(stoppedAlarm);
-        render();
       }
-    });
+      stoppedAlarm.snoozeNotificationId = null;
+      window.storage.alarms.upsert(stoppedAlarm);
+      render();
+    }, handleSnooze);
   }
 
   function init() {
@@ -224,6 +263,10 @@
     dayButtons = Array.prototype.slice.call(document.querySelectorAll('#alarm-modal .weekday-picker button'));
     deleteBtn = document.getElementById('alarm-delete');
     modalTitle = document.getElementById('alarm-modal-title');
+    snoozeEnabledCheckbox = document.getElementById('alarm-snooze-enabled');
+    snoozeOptions = document.getElementById('alarm-snooze-options');
+    snoozeMinutesSelect = document.getElementById('alarm-snooze-minutes');
+    snoozeEnabledCheckbox.addEventListener('change', updateSnoozeVisibility);
 
     grid.querySelector('.tile-add').addEventListener('click', function () { openEditor(null); });
     document.getElementById('alarm-cancel').addEventListener('click', closeEditor);

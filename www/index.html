@@ -140,6 +140,25 @@
         </div>
       </div>
 
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="alarm-snooze-enabled" checked />
+          <span data-i18n="alarm.snoozeEnable">Schlummern erlauben</span>
+        </label>
+        <div id="alarm-snooze-options" class="alarm-snooze-options">
+          <label class="field">
+            <span data-i18n="alarm.snoozeMinutesLabel">Schlummerdauer</span>
+            <select id="alarm-snooze-minutes">
+              <option value="5" data-i18n="alarm.snoozeMinutes5">5 Minuten</option>
+              <option value="10" data-i18n="alarm.snoozeMinutes10">10 Minuten</option>
+              <option value="15" data-i18n="alarm.snoozeMinutes15">15 Minuten</option>
+              <option value="20" data-i18n="alarm.snoozeMinutes20">20 Minuten</option>
+              <option value="30" data-i18n="alarm.snoozeMinutes30">30 Minuten</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button type="button" id="alarm-delete" class="btn danger" data-i18n="alarm.delete" hidden>Löschen</button>
         <button type="button" id="alarm-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
@@ -231,6 +250,7 @@
       <div id="ringing-time" class="ringing-time">00:00</div>
       <div id="ringing-title" class="ringing-title">Wecker</div>
     </div>
+    <button type="button" id="ringing-snooze-btn" class="btn secondary ringing-snooze-btn" data-i18n="alarm.snooze">Schlummern</button>
     <div class="ringing-swipe">
       <div id="ringing-swipe-hint" class="ringing-swipe-hint" data-i18n="alarm.swipeToStop">Zum Stoppen wischen</div>
       <div id="ringing-swipe-track" class="ringing-swipe-track">
