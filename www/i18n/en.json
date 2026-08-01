@@ -65,6 +65,12 @@
   "locationAlarm.locationSingular": "location",
   "locationAlarm.locationPlural": "locations",
   "locationAlarm.adPlaceholder": "Ad space (placeholder)",
+  "locationAlarm.notificationBody": "Location alarm triggered",
+
+  "bgPermission.title": "Allow location all the time",
+  "bgPermission.body": "For this location alarm to trigger even when the app is closed, it needs the \"Allow all the time\" location permission. Without it, the alarm only works while the app is open.",
+  "bgPermission.later": "Later",
+  "bgPermission.allow": "Grant permission",
 
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stop",

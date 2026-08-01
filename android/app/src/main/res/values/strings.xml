@@ -4,4 +4,8 @@
     <string name="title_activity_main">Wecker &amp; Ortswecker</string>
     <string name="package_name">app.weckerundort.mobile</string>
     <string name="custom_url_scheme">app.weckerundort.mobile</string>
+
+    <!-- @capgo/background-geolocation: Name des Benachrichtigungskanals für die
+         dauerhafte Hintergrund-Standort-Anzeige (Android-Pflicht ab API 26). -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Standort-Überwachung für Orts-Zeit-Wecker</string>
 </resources>

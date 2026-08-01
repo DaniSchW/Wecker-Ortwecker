@@ -65,6 +65,12 @@
   "locationAlarm.locationSingular": "Ort",
   "locationAlarm.locationPlural": "Orte",
   "locationAlarm.adPlaceholder": "Werbefläche (Platzhalter)",
+  "locationAlarm.notificationBody": "Orts-Zeit-Wecker ausgelöst",
+
+  "bgPermission.title": "Standort immer erlauben",
+  "bgPermission.body": "Damit dieser Orts-Zeit-Wecker auch auslöst, wenn die App geschlossen ist, braucht sie die Berechtigung „Standort immer erlauben“. Ohne diese Berechtigung funktioniert der Alarm nur, solange die App geöffnet ist.",
+  "bgPermission.later": "Später",
+  "bgPermission.allow": "Berechtigung erteilen",
 
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stopp",

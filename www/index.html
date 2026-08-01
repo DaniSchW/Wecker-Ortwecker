@@ -348,6 +348,18 @@
     </div>
   </div>
 
+  <div id="background-permission-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-sheet">
+      <h2 data-i18n="bgPermission.title">Standort immer erlauben</h2>
+      <p class="field-hint" data-i18n="bgPermission.body">Damit dieser Orts-Zeit-Wecker auch auslöst, wenn die App geschlossen ist, braucht sie die Berechtigung „Standort immer erlauben“. Ohne diese Berechtigung funktioniert der Alarm nur, solange die App geöffnet ist.</p>
+      <div class="modal-actions">
+        <button type="button" id="background-permission-later" class="btn secondary" data-i18n="bgPermission.later">Später</button>
+        <button type="button" id="background-permission-allow" class="btn primary" data-i18n="bgPermission.allow">Berechtigung erteilen</button>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/tabs.js"></script>
@@ -360,6 +372,7 @@
   <script src="js/timers.js"></script>
   <script src="js/tabata.js"></script>
   <script src="js/map.js"></script>
+  <script src="js/backgroundGeofence.js"></script>
   <script src="js/geoTrigger.js"></script>
   <script src="js/locationRinging.js"></script>
   <script src="js/locationAlarms.js"></script>

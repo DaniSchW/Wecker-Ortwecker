@@ -102,6 +102,23 @@
     }
   }
 
+  // Zentrale Entscheidung, ob ein Orts-/Zeitwechsel den Alarm ausloesen soll -
+  // gemeinsam genutzt vom Vordergrund-Pfad (watchPosition, per Distanz) und
+  // vom nativen Hintergrund-Pfad (echte Geofence-Transitions). Aktualisiert
+  // loc.wasInside immer, damit beide Pfade sich nicht gegenseitig doppelt
+  // ausloesen koennen (der zweite Aufruf sieht dann inside === wasInside).
+  function applyLocationState(alarm, loc, inside, now) {
+    var wasInside = !!loc.wasInside;
+    if (inside === wasInside) return false;
+    loc.wasInside = inside;
+
+    if (!periodAllows(alarm, now) || !commuteAllows(alarm, now)) return false;
+
+    var arrived = inside && !wasInside;
+    var departed = !inside && wasInside;
+    return (alarm.trigger === 'arrival' && arrived) || (alarm.trigger === 'departure' && departed);
+  }
+
   function evaluate(position) {
     if (checking || !triggerCallback) return;
     checking = true;
@@ -116,26 +133,14 @@
         var alarm = alarms[i];
         if (!alarm.enabled || !alarm.locations || !alarm.locations.length) continue;
 
-        var periodOk = periodAllows(alarm, now);
-        var commuteOk = commuteAllows(alarm, now);
         var fired = false;
 
         alarm.locations.forEach(function (loc) {
           var distance = window.locationPicker.haversineMeters(lat, lng, loc.lat, loc.lng);
           var inside = distance <= (alarm.radius || 150);
-          var wasInside = !!loc.wasInside;
-
-          if (inside !== wasInside) {
-            loc.wasInside = inside;
-            changed = true;
-            if (!fired && periodOk && commuteOk) {
-              var arrived = inside && !wasInside;
-              var departed = !inside && wasInside;
-              if ((alarm.trigger === 'arrival' && arrived) || (alarm.trigger === 'departure' && departed)) {
-                fired = true;
-              }
-            }
-          }
+          var wasInsideBefore = loc.wasInside;
+          if (applyLocationState(alarm, loc, inside, now) && !fired) fired = true;
+          if (loc.wasInside !== wasInsideBefore) changed = true;
         });
 
         if (fired) {
@@ -157,6 +162,26 @@
 
   function handlePosition(position) {
     evaluate(position);
+  }
+
+  // Wird von backgroundGeofence.js aufgerufen, wenn eine ECHTE native
+  // Geofence-Transition eintrifft (auch wenn die App zuvor im Hintergrund
+  // lief). isEnter=true/false statt Distanzberechnung, da Android/Play
+  // Services das direkt liefern.
+  function handleNativeTransition(alarmId, locationId, isEnter) {
+    if (!triggerCallback) return;
+    var alarms = window.storage.locationAlarms.getAll();
+    var alarm = alarms.find(function (a) { return a.id === alarmId; });
+    if (!alarm || !alarm.enabled || !alarm.locations) return;
+    var loc = alarm.locations.find(function (l) { return l.id === locationId; });
+    if (!loc) return;
+
+    var now = new Date();
+    var fired = applyLocationState(alarm, loc, isEnter, now);
+    if (fired) markTriggered(alarm, now);
+
+    window.storage.locationAlarms.save(alarms);
+    if (fired) triggerCallback(alarm);
   }
 
   function start() {
@@ -188,8 +213,16 @@
     watchHandle = null;
   }
 
+  var nativeTransitionsWired = false;
+
   function onTrigger(cb) {
     triggerCallback = cb;
+    // Nativen Hintergrund-Pfad genau einmal verdrahten, sobald ein
+    // Trigger-Callback registriert wurde (unabhängig vom Vordergrund-Watch).
+    if (!nativeTransitionsWired && window.backgroundGeofence) {
+      nativeTransitionsWired = true;
+      window.backgroundGeofence.onTransition(handleNativeTransition);
+    }
   }
 
   window.geoTrigger = {

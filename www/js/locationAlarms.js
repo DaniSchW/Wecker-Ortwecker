@@ -9,9 +9,11 @@
   var triggerButtons, repeatButtons, periodicOptions, periodicUnitSelect, periodicCustomWrap, periodicCustomInput;
   var commuteCheckbox, commuteOptions, commuteDayButtons, commuteStart, commuteEnd;
   var soundInputs, deleteBtn;
+  var bgModal, bgAllowBtn, bgLaterBtn;
   var picker = null;
   var editingId = null;
   var geoStarted = false;
+  var BG_PROMPT_DISMISSED_KEY = 'wo.bgLocationPromptDismissed';
 
   function repeatSummary(alarm) {
     if (alarm.repeatType === 'once') return window.i18n.t('locationAlarm.repeatOnce');
@@ -82,7 +84,8 @@
     alarm.enabled = enabled;
     window.storage.locationAlarms.upsert(alarm);
     render();
-    ensureGeoWatch();
+    syncTracking();
+    if (enabled) maybePromptBackgroundPermission();
   }
 
   function setActiveToggle(buttons, value, attr) {
@@ -198,7 +201,8 @@
     window.storage.locationAlarms.upsert(alarm);
     closeEditor();
     render();
-    ensureGeoWatch();
+    syncTracking();
+    if (alarm.enabled) maybePromptBackgroundPermission();
   }
 
   function deleteAlarm() {
@@ -206,9 +210,10 @@
     window.storage.locationAlarms.remove(editingId);
     closeEditor();
     render();
+    syncTracking();
   }
 
-  function handleTrigger(alarm) {
+  function ringAlarmNow(alarm) {
     window.locationRinging.show(alarm, function () {
       // Zustand wurde in geoTrigger.js bereits aktualisiert (verbraucht/Periode);
       // hier nur die Kachel-Ansicht auffrischen.
@@ -216,8 +221,70 @@
     });
   }
 
-  function ensureGeoWatch() {
-    var hasEnabled = window.storage.locationAlarms.getAll().some(function (a) { return a.enabled; });
+  function notifyAlarmInBackground(alarm) {
+    var id = window.Notify.nextId();
+    window.Notify.schedule([{
+      id: id,
+      title: alarm.title,
+      body: alarm.description || window.i18n.t('locationAlarm.notificationBody'),
+      channelId: window.Notify.channelFor(alarm.sound),
+      schedule: { at: new Date() },
+      extra: { type: 'locationAlarm', alarmId: alarm.id }
+    }]);
+  }
+
+  function handleTrigger(alarm) {
+    // Im Vordergrund direkt das Overlay zeigen (kein Umweg über eine
+    // Benachrichtigung noetig). Im Hintergrund/bei geschlossener App gibt es
+    // keine sichtbare Seite fuer ein Overlay - dort uebernimmt eine lokale
+    // Benachrichtigung, deren Antippen (oder Eintreffen im Vordergrund) ueber
+    // denselben Notify.onFire-Mechanismus wie Wecker/Timer das Overlay oeffnet.
+    if (document.visibilityState === 'visible') {
+      ringAlarmNow(alarm);
+    } else {
+      notifyAlarmInBackground(alarm);
+    }
+  }
+
+  function handleNotificationFire(evt) {
+    var extra = evt.notification && evt.notification.extra;
+    if (!extra || extra.type !== 'locationAlarm') return;
+    var alarm = window.storage.locationAlarms.getAll().find(function (a) { return a.id === extra.alarmId; });
+    if (!alarm) return;
+    ringAlarmNow(alarm);
+  }
+
+  function maybePromptBackgroundPermission() {
+    if (!window.backgroundGeofence || !window.backgroundGeofence.isAvailable()) return;
+    var dismissed = false;
+    try { dismissed = localStorage.getItem(BG_PROMPT_DISMISSED_KEY) === '1'; } catch (e) {}
+    if (dismissed) return;
+
+    window.backgroundGeofence.checkPermissions().then(function (status) {
+      if (!status || status.backgroundLocation === 'granted') return;
+      bgModal.classList.add('is-visible');
+    });
+  }
+
+  function dismissBackgroundPrompt() {
+    try { localStorage.setItem(BG_PROMPT_DISMISSED_KEY, '1'); } catch (e) {}
+    bgModal.classList.remove('is-visible');
+  }
+
+  function requestBackgroundPermissionFromModal() {
+    window.backgroundGeofence.requestBackgroundPermission().then(function (status) {
+      bgModal.classList.remove('is-visible');
+      if (status && status.backgroundLocation !== 'granted') {
+        try { localStorage.setItem(BG_PROMPT_DISMISSED_KEY, '1'); } catch (e) {}
+      }
+    });
+  }
+
+  function syncTracking() {
+    var alarms = window.storage.locationAlarms.getAll();
+    var hasEnabled = alarms.some(function (a) { return a.enabled; });
+
+    // Vordergrund-Pfad (watchPosition) - reagiert sofort, solange die App offen ist.
     if (hasEnabled && !geoStarted) {
       window.geoTrigger.requestPermissions().then(function () {
         window.geoTrigger.start();
@@ -226,6 +293,13 @@
     } else if (!hasEnabled && geoStarted) {
       window.geoTrigger.stop();
       geoStarted = false;
+    }
+
+    // Hintergrund-Pfad (native Geofences) - laeuft weiter, wenn die App
+    // geschlossen/beendet ist. Kein separater Start/Stop noetig, die
+    // Ortsliste wird einfach neu abgeglichen.
+    if (window.backgroundGeofence && window.backgroundGeofence.isAvailable()) {
+      window.backgroundGeofence.syncGeofences(alarms);
     }
   }
 
@@ -267,6 +341,13 @@
     soundInputs = Array.prototype.slice.call(document.querySelectorAll('input[name="loc-sound"]'));
     deleteBtn = document.getElementById('location-alarm-delete');
 
+    bgModal = document.getElementById('background-permission-modal');
+    bgAllowBtn = document.getElementById('background-permission-allow');
+    bgLaterBtn = document.getElementById('background-permission-later');
+    bgAllowBtn.addEventListener('click', requestBackgroundPermissionFromModal);
+    bgLaterBtn.addEventListener('click', dismissBackgroundPrompt);
+    bgModal.querySelector('.modal-backdrop').addEventListener('click', dismissBackgroundPrompt);
+
     picker = window.locationPicker.create(document.getElementById('location-picker-root'));
 
     grid.querySelector('.tile-add').addEventListener('click', function () { openEditor(null); });
@@ -288,9 +369,10 @@
     commuteCheckbox.addEventListener('change', updateCommuteVisibility);
 
     window.geoTrigger.onTrigger(handleTrigger);
+    window.Notify.onFire(handleNotificationFire);
 
     render();
-    ensureGeoWatch();
+    syncTracking();
   }
 
   window.locationAlarmsTab = { init: init, render: render };

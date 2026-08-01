@@ -39,8 +39,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Standort im Vordergrund (Orts-Zeit-Wecker, Phase 3). Hintergrund-Geofencing
-         inkl. ACCESS_BACKGROUND_LOCATION folgt in Phase 4. -->
+    <!-- Standort im Vordergrund (Orts-Zeit-Wecker, Phase 3). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- Hintergrund-Geofencing (Phase 4, @capgo/background-geolocation). Wird von der
+         App erst nach Vordergrund-Zustimmung und mit Erklärung angefragt (siehe
+         js/backgroundGeofence.js). FOREGROUND_SERVICE/-_LOCATION, POST_NOTIFICATIONS,
+         WAKE_LOCK und RECEIVE_BOOT_COMPLETED bringt das Plugin über sein eigenes
+         AndroidManifest.xml automatisch mit. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 </manifest>
