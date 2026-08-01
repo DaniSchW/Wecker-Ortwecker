@@ -3,7 +3,8 @@
 
   var KEYS = {
     alarms: 'wo.alarms',
-    timers: 'wo.timers'
+    timers: 'wo.timers',
+    locationAlarms: 'wo.locationAlarms'
   };
 
   function readList(key) {
@@ -62,6 +63,7 @@
   window.storage = {
     makeId: makeId,
     alarms: makeStore(KEYS.alarms),
-    timers: makeStore(KEYS.timers)
+    timers: makeStore(KEYS.timers),
+    locationAlarms: makeStore(KEYS.locationAlarms)
   };
 })();

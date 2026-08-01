@@ -39,8 +39,39 @@ Overlay öffnet sich zuverlässig, sobald die App im Vorder-/Hintergrund läuft 
 über die System-Benachrichtigung geöffnet wird – der Feinschliff für den
 Sperrbildschirm-Fall ist für Phase 4/7 (echtes Gerät) vorgesehen.
 
-Die weiteren Phasen (Orts-Zeit-Wecker-Kernfeature, Background-Geofencing,
-Erweiterungen, Werbung/Monetarisierung, Testing/Release) sind noch offen.
+**Phase 3 – Orts-Zeit-Wecker (Kernfeature)** ist umgesetzt:
+
+- **Editor**: Titel (Pflicht), Beschreibung, ein oder mehrere Orte über Karte
+  (Pin setzen/verschieben, Leaflet + OpenStreetMap-Kacheln, lokal vendored in
+  `www/vendor/leaflet/`) und Text-Adresssuche (Geocoding/Autovervollständigung
+  über die Nominatim-API), gemeinsamer einstellbarer Radius für die ganze
+  Ortsgruppe, Trigger Ankunft/Abfahrt wählbar.
+- **Wiederholungstyp**: einmalig / permanent / periodisch (täglich, wöchentlich,
+  monatlich, freier Zeitraum in Tagen) – löst nur beim ersten Erreichen im
+  aktuellen Zeitraum aus.
+- **Pendel-Filter**: optional kombinierbar mit Wochentagen + Uhrzeitfenster
+  (z. B. Bushaltestellen-Alarm nur Mo–Fr in einem Zeitfenster).
+- **Trigger-Logik**: `@capacitor/geolocation` (`watchPosition`) wertet die
+  Bedingungen im Vordergrund aus (Haversine-Distanz, Ankunft/Abfahrt-Erkennung
+  je Ort in der Gruppe, Perioden-Reset). Echtes Background-Geofencing über ein
+  natives Plugin ist bewusst Phase 4 vorbehalten.
+- **Auslöse-Bildschirm**: Werbefläche (Platzhalter, ~50 % der Höhe – echtes
+  AdMob folgt in Phase 6), Titel + Beschreibung darunter, Stopp per Swipe,
+  Ton/Vibration/Beides wie beim Standard-Wecker (gemeinsame Logik in
+  `www/js/alarmSound.js`).
+
+Bekannte Einschränkungen:
+- Die Standort-Auswertung läuft nur, solange die App geöffnet ist (Vordergrund/
+  kurzzeitig Hintergrund) – echtes Geofencing im vollständig geschlossenen
+  Zustand kommt mit dem nativen Plugin in Phase 4.
+- Die Nominatim-Geocoding-API ist ein kostenloser Dienst mit Nutzungsrichtlinien
+  (Rate-Limits); für produktiven Einsatz in größerem Maßstab sollte ein
+  dedizierter Geocoding-Anbieter mit eigenem API-Key eingeplant werden.
+- Auf einem echten Gerät fehlt bislang die Berechtigungsanfrage/Erklärung für
+  „Standort immer erlauben" (ACCESS_BACKGROUND_LOCATION) – ebenfalls Phase 4.
+
+Die weiteren Phasen (Background-Geofencing, Erweiterungen, Werbung/
+Monetarisierung, Testing/Release) sind noch offen.
 
 ## Entwicklung
 

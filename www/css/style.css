@@ -479,7 +479,8 @@ body {
 
 .field input[type='time'],
 .field input[type='text'],
-.field input[type='number'] {
+.field input[type='number'],
+.field textarea {
   font-family: inherit;
   font-size: 16px;
   color: var(--color-text);
@@ -487,6 +488,7 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+  resize: vertical;
 }
 
 .weekday-picker {
@@ -628,4 +630,285 @@ body {
 
 body.is-ringing .bottom-nav {
   display: none;
+}
+
+/* Orts-Zeit-Wecker: Kachel-Ansicht */
+.location-tile-title {
+  font-size: 16px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-tile-meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Segmentierte Umschalter (Ankunft/Abfahrt, Wiederholungstyp) */
+.segmented-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggle-btn {
+  flex: 1 1 0;
+  min-width: 88px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggle-btn.is-active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.checkbox-row input {
+  margin-top: 3px;
+}
+
+.periodic-options,
+.commute-options {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.periodic-options select {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.periodic-custom-days {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.periodic-custom-days input {
+  width: 72px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.time-window-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-window-row input {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+/* Kartenauswahl (Leaflet) */
+.location-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.location-picker-search-wrap {
+  position: relative;
+}
+
+.location-picker-search {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.location-picker-results {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.location-picker-results.is-visible {
+  display: block;
+}
+
+.location-picker-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.location-picker-result:last-child {
+  border-bottom: none;
+}
+
+.location-picker-result:hover,
+.location-picker-result:active {
+  background: var(--color-surface);
+}
+
+.location-picker-map {
+  height: 220px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.location-picker-radius-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.location-picker-radius-row input[type='range'] {
+  flex: 1;
+}
+
+.location-picker-radius-value {
+  min-width: 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.location-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.location-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.location-picker-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-picker-empty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding: 4px 2px;
+}
+
+/* Orts-Zeit-Wecker Auslöse-Bildschirm mit Werbefläche */
+.location-ringing-overlay {
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.location-ringing-ad {
+  flex: 0 0 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.location-ringing-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 24px;
+  gap: 8px;
+}
+
+.location-ringing-title {
+  margin-top: 0;
+  font-size: 22px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.location-ringing-description {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  max-width: 40ch;
+}
+
+.location-ringing-overlay .ringing-swipe {
+  flex: 0 0 auto;
+  padding: 0 24px calc(24px + var(--safe-bottom));
 }

@@ -9,9 +9,11 @@
       .then(function () {
         window.tabs.init();
         window.ringing.init();
+        window.locationRinging.init();
         window.alarmsTab.init();
         window.stopwatchTab.init();
         window.timerTab.init();
+        window.locationAlarmsTab.init();
 
         window.Notify.createChannels();
         window.Notify.requestPermissions();

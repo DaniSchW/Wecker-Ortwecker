@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <title>Wecker & Ortswecker</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -167,14 +168,129 @@
     </div>
   </div>
 
+  <div id="location-alarm-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <form id="location-alarm-form" class="modal-sheet">
+      <h2 id="location-alarm-modal-title" data-i18n="locationAlarm.newTitle">Orts-Zeit-Wecker hinzufügen</h2>
+
+      <label class="field">
+        <span data-i18n="locationAlarm.titleLabel">Titel</span>
+        <input type="text" id="loc-title" maxlength="60" required />
+      </label>
+
+      <label class="field">
+        <span data-i18n="locationAlarm.descriptionLabel">Beschreibung (optional)</span>
+        <textarea id="loc-description" maxlength="200" rows="2"></textarea>
+      </label>
+
+      <div class="field">
+        <span data-i18n="locationAlarm.locationsLabel">Orte</span>
+        <div id="location-picker-root" class="location-picker">
+          <div class="location-picker-search-wrap">
+            <input type="text" class="location-picker-search" data-i18n-placeholder="locationAlarm.searchPlaceholder" placeholder="Adresse suchen…" />
+            <div class="location-picker-results"></div>
+          </div>
+          <div class="location-picker-map"></div>
+          <div class="location-picker-radius-row">
+            <span data-i18n="locationAlarm.radiusLabel">Radius</span>
+            <input type="range" class="location-picker-radius" min="30" max="2000" step="10" value="150" />
+            <span class="location-picker-radius-value">150 m</span>
+          </div>
+          <ul class="location-picker-list"></ul>
+        </div>
+        <p class="field-hint" data-i18n="locationAlarm.mapHint">Auf die Karte tippen oder Adresse suchen, um einen Ort hinzuzufügen. Mehrere Orte möglich – der Alarm löst beim ersten erreichten Ort aus.</p>
+      </div>
+
+      <div class="field">
+        <span data-i18n="locationAlarm.triggerLabel">Auslösen bei</span>
+        <div id="loc-trigger-group" class="segmented-row">
+          <button type="button" class="toggle-btn is-active" data-trigger="arrival" data-i18n="locationAlarm.arrival">Ankunft</button>
+          <button type="button" class="toggle-btn" data-trigger="departure" data-i18n="locationAlarm.departure">Abfahrt</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span data-i18n="locationAlarm.repeatLabel">Wiederholung</span>
+        <div id="loc-repeat-group" class="segmented-row">
+          <button type="button" class="toggle-btn is-active" data-repeat="once" data-i18n="locationAlarm.repeatOnce">Einmalig</button>
+          <button type="button" class="toggle-btn" data-repeat="permanent" data-i18n="locationAlarm.repeatPermanent">Permanent</button>
+          <button type="button" class="toggle-btn" data-repeat="periodic" data-i18n="locationAlarm.repeatPeriodic">Periodisch</button>
+        </div>
+        <div id="periodic-options" class="periodic-options" hidden>
+          <select id="loc-periodic-unit">
+            <option value="daily" data-i18n="locationAlarm.periodicDaily">Täglich</option>
+            <option value="weekly" data-i18n="locationAlarm.periodicWeekly">Wöchentlich</option>
+            <option value="monthly" data-i18n="locationAlarm.periodicMonthly">Monatlich</option>
+            <option value="custom" data-i18n="locationAlarm.periodicCustom">Freier Zeitraum</option>
+          </select>
+          <div id="periodic-custom-days" class="periodic-custom-days" hidden>
+            <input type="number" id="loc-periodic-custom-days" min="1" max="365" value="30" />
+            <span data-i18n="locationAlarm.days">Tage</span>
+          </div>
+        </div>
+        <p class="field-hint" data-i18n="locationAlarm.periodicHint">Löst nur beim ersten Erreichen im aktuellen Zeitraum aus.</p>
+      </div>
+
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="loc-commute-enabled" />
+          <span data-i18n="locationAlarm.commuteLabel">Nur an bestimmten Wochentagen/Uhrzeiten (z. B. Pendeln)</span>
+        </label>
+        <div id="commute-options" class="commute-options" hidden>
+          <div id="commute-weekday-picker" class="weekday-picker"></div>
+          <div class="time-window-row">
+            <input type="time" id="loc-commute-start" />
+            <span>–</span>
+            <input type="time" id="loc-commute-end" />
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span data-i18n="alarm.soundLabel">Ton &amp; Vibration</span>
+        <div class="segmented">
+          <label><input type="radio" name="loc-sound" value="sound" /><span data-i18n="alarm.soundOnly">Nur Ton</span></label>
+          <label><input type="radio" name="loc-sound" value="vibration" /><span data-i18n="alarm.vibrationOnly">Nur Vibration</span></label>
+          <label><input type="radio" name="loc-sound" value="both" checked /><span data-i18n="alarm.soundAndVibration">Beides</span></label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="location-alarm-delete" class="btn danger" data-i18n="alarm.delete" hidden>Löschen</button>
+        <button type="button" id="location-alarm-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
+        <button type="submit" class="btn primary" data-i18n="common.save">Speichern</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="location-ringing-overlay" class="ringing-overlay location-ringing-overlay">
+    <div class="location-ringing-ad" data-i18n="locationAlarm.adPlaceholder">Werbefläche (Platzhalter)</div>
+    <div class="location-ringing-body">
+      <div id="location-ringing-title" class="ringing-title location-ringing-title">Orts-Zeit-Wecker</div>
+      <div id="location-ringing-description" class="location-ringing-description"></div>
+    </div>
+    <div class="ringing-swipe">
+      <div id="location-ringing-swipe-hint" class="ringing-swipe-hint" data-i18n="alarm.swipeToStop">Zum Stoppen wischen</div>
+      <div id="location-ringing-swipe-track" class="ringing-swipe-track">
+        <div id="location-ringing-swipe-handle" class="ringing-swipe-handle">»</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/tabs.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/notifications.js"></script>
+  <script src="js/alarmSound.js"></script>
   <script src="js/ringing.js"></script>
   <script src="js/alarms.js"></script>
   <script src="js/stopwatch.js"></script>
   <script src="js/timers.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/geoTrigger.js"></script>
+  <script src="js/locationRinging.js"></script>
+  <script src="js/locationAlarms.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,16 +1,9 @@
 (function () {
   'use strict';
 
-  var overlay, titleEl, timeEl, swipeTrack, swipeHandle, swipeHint;
+  var overlay, titleEl, descriptionEl, swipeTrack, swipeHandle, swipeHint;
   var activeAlarm = null;
   var onStopCallback = null;
-
-  function formatNow() {
-    var d = new Date();
-    var hh = String(d.getHours()).padStart(2, '0');
-    var mm = String(d.getMinutes()).padStart(2, '0');
-    return hh + ':' + mm;
-  }
 
   function resetSwipe() {
     swipeHandle.style.transform = 'translateX(0)';
@@ -58,8 +51,9 @@
     activeAlarm = alarm;
     onStopCallback = stopCallback;
 
-    titleEl.textContent = alarm.label && alarm.label.trim() ? alarm.label : window.i18n.t('alarm.defaultRingingTitle');
-    timeEl.textContent = alarm.time || formatNow();
+    titleEl.textContent = alarm.title || window.i18n.t('alarm.defaultRingingTitle');
+    descriptionEl.textContent = alarm.description || '';
+    descriptionEl.hidden = !alarm.description;
     swipeHint.textContent = window.i18n.t('alarm.swipeToStop');
     resetSwipe();
 
@@ -81,14 +75,14 @@
   }
 
   function init() {
-    overlay = document.getElementById('ringing-overlay');
-    titleEl = document.getElementById('ringing-title');
-    timeEl = document.getElementById('ringing-time');
-    swipeTrack = document.getElementById('ringing-swipe-track');
-    swipeHandle = document.getElementById('ringing-swipe-handle');
-    swipeHint = document.getElementById('ringing-swipe-hint');
+    overlay = document.getElementById('location-ringing-overlay');
+    titleEl = document.getElementById('location-ringing-title');
+    descriptionEl = document.getElementById('location-ringing-description');
+    swipeTrack = document.getElementById('location-ringing-swipe-track');
+    swipeHandle = document.getElementById('location-ringing-swipe-handle');
+    swipeHint = document.getElementById('location-ringing-swipe-hint');
     setupSwipe();
   }
 
-  window.ringing = { init: init, show: show, stop: stop };
+  window.locationRinging = { init: init, show: show, stop: stop };
 })();
