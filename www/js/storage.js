@@ -4,7 +4,8 @@
   var KEYS = {
     alarms: 'wo.alarms',
     timers: 'wo.timers',
-    locationAlarms: 'wo.locationAlarms'
+    locationAlarms: 'wo.locationAlarms',
+    tabataPresets: 'wo.tabataPresets'
   };
 
   function readList(key) {
@@ -64,6 +65,7 @@
     makeId: makeId,
     alarms: makeStore(KEYS.alarms),
     timers: makeStore(KEYS.timers),
-    locationAlarms: makeStore(KEYS.locationAlarms)
+    locationAlarms: makeStore(KEYS.locationAlarms),
+    tabataPresets: makeStore(KEYS.tabataPresets)
   };
 })();

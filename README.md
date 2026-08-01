@@ -30,6 +30,14 @@ Orts-Zeit-Wecker (Geofencing), Stoppuhr und Timer.
 - **Timer**: Mehrere parallele, unabhängige Timer mit eigenem Label als Kacheln
   untereinander, Start/Pause/Reset je Timer, Fertig-Signal mit Ton/Vibration,
   Hintergrund-Benachrichtigung über lokale Notifications.
+- **Timer-Tab, Modus "Intervall (Tabata)"**: zweite Betriebsart neben dem
+  einfachen Timer. Presets mit Belastungs-/Pausenzeit, Rundenanzahl und
+  optionaler Vorbereitungszeit; Ablauf Vorbereitung → (Belastung ↔ Pause) ×
+  Runden → Abschluss mit vier unterscheidbaren Signaltönen (Vorbereitung-Start,
+  „Los", Wechsel zur Pause, Abschluss). Große, aus der Distanz lesbare
+  Phasen-/Zeit-/Rundenanzeige, Start/Pause/Reset wie bei der Stoppuhr, läuft
+  komplett im Vordergrund ohne Abhängigkeit von Phase 4. Kein Swipe-Stopp
+  nötig – der Ablauf endet nach der letzten Runde automatisch.
 
 Bekannte Einschränkung: Ein echtes, systemweites Vollbild-Alarmklingeln über den
 Sperrbildschirm hinweg (wie bei der nativen Android-Uhr-App), während die App

@@ -48,9 +48,37 @@
       </section>
 
       <section id="tab-timer" class="tab-panel">
-        <div class="tile-stack">
-          <div class="empty-state" data-i18n="timer.empty">Noch keine Timer. Tippe auf + zum Hinzufügen.</div>
-          <button type="button" class="tile tile-add" data-i18n-aria-label="timer.add">+</button>
+        <div id="timer-mode-switch" class="segmented-row timer-mode-switch">
+          <button type="button" class="toggle-btn is-active" data-timer-mode="simple" data-i18n="timer.modeSimple">Einfach</button>
+          <button type="button" class="toggle-btn" data-timer-mode="interval" data-i18n="timer.modeInterval">Intervall (Tabata)</button>
+        </div>
+
+        <div id="timer-mode-simple" class="timer-mode-panel">
+          <div class="tile-stack">
+            <div class="empty-state" data-i18n="timer.empty">Noch keine Timer. Tippe auf + zum Hinzufügen.</div>
+            <button type="button" class="tile tile-add" data-i18n-aria-label="timer.add">+</button>
+          </div>
+        </div>
+
+        <div id="timer-mode-interval" class="timer-mode-panel" hidden>
+          <div id="tabata-list-view">
+            <div class="tile-stack">
+              <div class="empty-state" data-i18n="tabata.empty">Noch keine Intervall-Timer. Tippe auf + zum Hinzufügen.</div>
+              <button type="button" class="tile tile-add" data-i18n-aria-label="tabata.add">+</button>
+            </div>
+          </div>
+
+          <div id="tabata-session-view" class="tabata-session" hidden>
+            <button type="button" id="tabata-back" class="icon-btn tabata-back" data-i18n-aria-label="common.back">‹</button>
+            <div id="tabata-session-label" class="tabata-session-label"></div>
+            <div id="tabata-phase-label" class="tabata-phase-label">–</div>
+            <div id="tabata-time" class="tabata-time">00:00</div>
+            <div id="tabata-round-progress" class="tabata-round-progress"></div>
+            <div class="stopwatch-controls">
+              <button type="button" id="tabata-reset" class="btn-round secondary" data-i18n="stopwatch.reset">Zurücksetzen</button>
+              <button type="button" id="tabata-start-pause" class="btn-round primary" data-i18n="stopwatch.start">Start</button>
+            </div>
+          </div>
         </div>
       </section>
     </main>
@@ -150,6 +178,49 @@
 
       <div class="modal-actions">
         <button type="button" id="timer-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
+        <button type="submit" class="btn primary" data-i18n="common.save">Speichern</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="tabata-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <form id="tabata-form" class="modal-sheet">
+      <h2 id="tabata-modal-title" data-i18n="tabata.newTitle">Intervall-Timer hinzufügen</h2>
+
+      <label class="field">
+        <span data-i18n="timer.labelLabel">Bezeichnung (optional)</span>
+        <input type="text" id="tabata-label" maxlength="60" />
+      </label>
+
+      <label class="field">
+        <span data-i18n="tabata.workLabel">Belastungszeit (Sek.)</span>
+        <input type="number" id="tabata-work" min="1" max="600" value="20" required />
+      </label>
+
+      <label class="field">
+        <span data-i18n="tabata.restLabel">Pausenzeit (Sek.)</span>
+        <input type="number" id="tabata-rest" min="1" max="600" value="10" required />
+      </label>
+
+      <label class="field">
+        <span data-i18n="tabata.roundsLabel">Anzahl Runden</span>
+        <input type="number" id="tabata-rounds" min="1" max="99" value="8" required />
+      </label>
+
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="tabata-prep-enabled" checked />
+          <span data-i18n="tabata.prepLabel">Vorbereitungszeit</span>
+        </label>
+        <div id="tabata-prep-wrap" class="periodic-custom-days">
+          <input type="number" id="tabata-prep" min="1" max="60" value="10" />
+          <span data-i18n="tabata.seconds">Sek.</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="tabata-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
         <button type="submit" class="btn primary" data-i18n="common.save">Speichern</button>
       </div>
     </form>
@@ -287,6 +358,7 @@
   <script src="js/alarms.js"></script>
   <script src="js/stopwatch.js"></script>
   <script src="js/timers.js"></script>
+  <script src="js/tabata.js"></script>
   <script src="js/map.js"></script>
   <script src="js/geoTrigger.js"></script>
   <script src="js/locationRinging.js"></script>

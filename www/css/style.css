@@ -23,6 +23,14 @@
   box-sizing: border-box;
 }
 
+/* Das hidden-Attribut muss immer gewinnen, auch gegen Klassen, die display
+   explizit setzen (z. B. .periodic-options, .commute-options) - sonst bleiben
+   per JS "verstecke" Blöcke sichtbar, weil Autoren-CSS sonst die
+   UA-[hidden]-Regel gleicher Spezifität aussticht. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   height: 100%;
@@ -911,4 +919,77 @@ body.is-ringing .bottom-nav {
 .location-ringing-overlay .ringing-swipe {
   flex: 0 0 auto;
   padding: 0 24px calc(24px + var(--safe-bottom));
+}
+
+/* Timer-Tab: Modus-Umschaltung Einfach/Intervall (Tabata) */
+.timer-mode-switch {
+  margin-bottom: 16px;
+}
+
+.timer-mode-panel[hidden] {
+  display: none;
+}
+
+/* Tabata: Session-Ansicht */
+.tabata-session {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 48px 16px 12px;
+  text-align: center;
+}
+
+.tabata-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 26px;
+  padding: 8px 12px;
+}
+
+.tabata-session-label {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.tabata-phase-label {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 8px 24px;
+  border-radius: 999px;
+}
+
+.tabata-phase-label-prep {
+  background: rgba(255, 180, 84, 0.15);
+  color: #ffb454;
+}
+
+.tabata-phase-label-work {
+  background: rgba(255, 107, 107, 0.16);
+  color: var(--color-danger);
+}
+
+.tabata-phase-label-rest {
+  background: rgba(138, 180, 255, 0.16);
+  color: var(--color-accent);
+}
+
+.tabata-phase-label-done {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.tabata-time {
+  font-size: clamp(56px, 22vw, 96px);
+  font-weight: 200;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabata-round-progress {
+  font-size: 14px;
+  color: var(--color-text-muted);
 }

@@ -7,6 +7,7 @@
 
   "common.cancel": "Cancel",
   "common.save": "Save",
+  "common.back": "Back",
 
   "weekday.mon": "Mon",
   "weekday.tue": "Tue",
@@ -85,5 +86,28 @@
   "timer.ack": "OK",
   "timer.start": "Start",
   "timer.pause": "Pause",
-  "timer.reset": "Reset"
+  "timer.reset": "Reset",
+  "timer.modeSimple": "Simple",
+  "timer.modeInterval": "Interval (Tabata)",
+
+  "tabata.empty": "No interval timers yet. Tap + to add one.",
+  "tabata.add": "Add interval timer",
+  "tabata.newTitle": "Add interval timer",
+  "tabata.defaultLabel": "Interval timer",
+  "tabata.workLabel": "Work time (sec.)",
+  "tabata.restLabel": "Rest time (sec.)",
+  "tabata.roundsLabel": "Number of rounds",
+  "tabata.prepLabel": "Prep time",
+  "tabata.seconds": "sec.",
+  "tabata.work": "work",
+  "tabata.rest": "rest",
+  "tabata.roundSingular": "round",
+  "tabata.roundPlural": "rounds",
+  "tabata.prepShort": "prep",
+  "tabata.phasePrep": "Get ready",
+  "tabata.phaseWork": "Work",
+  "tabata.phaseRest": "Rest",
+  "tabata.phaseDone": "Done",
+  "tabata.finished": "Workout complete",
+  "tabata.roundProgress": "Round {current} of {total}"
 }

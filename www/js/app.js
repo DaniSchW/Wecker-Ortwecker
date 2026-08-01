@@ -13,6 +13,7 @@
         window.alarmsTab.init();
         window.stopwatchTab.init();
         window.timerTab.init();
+        window.tabataTab.init();
         window.locationAlarmsTab.init();
 
         window.Notify.createChannels();
