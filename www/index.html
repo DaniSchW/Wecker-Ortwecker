@@ -37,8 +37,8 @@
             <div class="stopwatch-time">00:00.00</div>
           </div>
           <div class="stopwatch-controls">
-            <button type="button" class="btn-round secondary" data-i18n="stopwatch.lap">Runde</button>
-            <button type="button" class="btn-round primary" data-i18n="stopwatch.start">Start</button>
+            <button type="button" id="stopwatch-lap-reset" class="btn-round secondary" data-i18n="stopwatch.lap">Runde</button>
+            <button type="button" id="stopwatch-start-stop" class="btn-round primary" data-i18n="stopwatch.start">Start</button>
           </div>
           <ul class="lap-list">
             <li class="empty-state" data-i18n="stopwatch.noLaps">Noch keine Rundenzeiten.</li>
@@ -74,8 +74,107 @@
     </nav>
   </div>
 
+  <div id="alarm-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <form id="alarm-form" class="modal-sheet">
+      <h2 id="alarm-modal-title" data-i18n="alarm.newTitle">Wecker hinzufügen</h2>
+
+      <label class="field">
+        <span data-i18n="alarm.timeLabel">Uhrzeit</span>
+        <input type="time" id="alarm-time" required />
+      </label>
+
+      <label class="field">
+        <span data-i18n="alarm.labelLabel">Bezeichnung (optional)</span>
+        <input type="text" id="alarm-label" maxlength="60" />
+      </label>
+
+      <div class="field">
+        <span data-i18n="alarm.repeatLabel">Wiederholung</span>
+        <div class="weekday-picker">
+          <button type="button" data-day="1" data-i18n="weekday.mon">Mo</button>
+          <button type="button" data-day="2" data-i18n="weekday.tue">Di</button>
+          <button type="button" data-day="3" data-i18n="weekday.wed">Mi</button>
+          <button type="button" data-day="4" data-i18n="weekday.thu">Do</button>
+          <button type="button" data-day="5" data-i18n="weekday.fri">Fr</button>
+          <button type="button" data-day="6" data-i18n="weekday.sat">Sa</button>
+          <button type="button" data-day="0" data-i18n="weekday.sun">So</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span data-i18n="alarm.soundLabel">Ton &amp; Vibration</span>
+        <div class="segmented">
+          <label><input type="radio" name="alarm-sound" value="sound" /><span data-i18n="alarm.soundOnly">Nur Ton</span></label>
+          <label><input type="radio" name="alarm-sound" value="vibration" /><span data-i18n="alarm.vibrationOnly">Nur Vibration</span></label>
+          <label><input type="radio" name="alarm-sound" value="both" checked /><span data-i18n="alarm.soundAndVibration">Beides</span></label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="alarm-delete" class="btn danger" data-i18n="alarm.delete" hidden>Löschen</button>
+        <button type="button" id="alarm-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
+        <button type="submit" class="btn primary" data-i18n="common.save">Speichern</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="timer-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <form id="timer-form" class="modal-sheet">
+      <h2 data-i18n="timer.newTitle">Timer hinzufügen</h2>
+
+      <label class="field">
+        <span data-i18n="timer.labelLabel">Bezeichnung (optional)</span>
+        <input type="text" id="timer-label" maxlength="60" />
+      </label>
+
+      <div class="field">
+        <span data-i18n="timer.durationLabel">Dauer</span>
+        <div class="duration-picker">
+          <label>
+            <input type="number" id="timer-hours" min="0" max="23" value="0" />
+            <span data-i18n="timer.hours">Std</span>
+          </label>
+          <label>
+            <input type="number" id="timer-minutes" min="0" max="59" value="5" />
+            <span data-i18n="timer.minutes">Min</span>
+          </label>
+          <label>
+            <input type="number" id="timer-seconds" min="0" max="59" value="0" />
+            <span data-i18n="timer.seconds">Sek</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="timer-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
+        <button type="submit" class="btn primary" data-i18n="common.save">Speichern</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="ringing-overlay" class="ringing-overlay">
+    <div class="ringing-content">
+      <div id="ringing-time" class="ringing-time">00:00</div>
+      <div id="ringing-title" class="ringing-title">Wecker</div>
+    </div>
+    <div class="ringing-swipe">
+      <div id="ringing-swipe-hint" class="ringing-swipe-hint" data-i18n="alarm.swipeToStop">Zum Stoppen wischen</div>
+      <div id="ringing-swipe-track" class="ringing-swipe-track">
+        <div id="ringing-swipe-handle" class="ringing-swipe-handle">»</div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/i18n.js"></script>
   <script src="js/tabs.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/ringing.js"></script>
+  <script src="js/alarms.js"></script>
+  <script src="js/stopwatch.js"></script>
+  <script src="js/timers.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
