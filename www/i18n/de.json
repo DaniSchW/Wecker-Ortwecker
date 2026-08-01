@@ -74,7 +74,7 @@
 
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stopp",
-  "stopwatch.reset": "Zurücksetzen",
+  "stopwatch.reset": "Reset",
   "stopwatch.lap": "Runde",
   "stopwatch.noLaps": "Noch keine Rundenzeiten.",
 

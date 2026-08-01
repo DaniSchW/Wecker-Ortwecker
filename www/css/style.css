@@ -189,9 +189,19 @@ body {
   height: 72px;
   border-radius: 50%;
   border: none;
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.15;
   font-weight: 500;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px 8px;
+  /* overflow-wrap:break-word alone doesn't shrink a flex item's automatic
+     min-width below the width of its longest word - "anywhere" does. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .btn-round.primary {
