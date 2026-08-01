@@ -11,6 +11,7 @@
   var canRequestAds = false;
   var privacyOptionsRequired = false;
   var bannerVisible = false;
+  var showToken = 0;
 
   function isNative() {
     return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -54,8 +55,14 @@
 
   function showLocationRingingBanner() {
     if (!isNative() || !plugin()) return Promise.resolve();
+    // init() (insb. die DSGVO-Einwilligung) kann beliebig lange auf eine
+    // Nutzerinteraktion warten. showToken sorgt dafuer, dass ein
+    // zwischenzeitliches hideLocationRingingBanner() (Alarm bereits
+    // weggewischt) diese verspaetete Anfrage nicht mehr in einen sichtbaren
+    // Banner muenden laesst.
+    var myToken = ++showToken;
     return init().then(function () {
-      if (!canRequestAds || bannerVisible) return;
+      if (myToken !== showToken || !canRequestAds || bannerVisible) return;
       bannerVisible = true;
       return plugin()
         .showBanner({
@@ -72,6 +79,7 @@
   }
 
   function hideLocationRingingBanner() {
+    showToken++;
     if (!isNative() || !plugin() || !bannerVisible) return Promise.resolve();
     bannerVisible = false;
     return plugin().removeBanner().catch(function () {});

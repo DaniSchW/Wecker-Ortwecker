@@ -55,7 +55,6 @@
     var locations = []; // { id, lat, lng, label }
     var markers = {}; // id -> { marker, circle }
     var changeCallback = null;
-    var nextLocalId = 1;
 
     function radiusMeters() {
       return parseInt(radiusInput.value, 10) || 150;
@@ -99,8 +98,12 @@
       entry.circle.setRadius(radiusMeters());
     }
 
-    function addLocation(lat, lng, label) {
-      var id = 'loc' + (nextLocalId++);
+    function addLocation(lat, lng, label, id) {
+      // id wird beim Bearbeiten eines bestehenden Alarms von setLocations()
+      // durchgereicht, damit die gespeicherte wasInside-Ankunfts-/Abfahrts-
+      // Historie je Ort erhalten bleibt (sonst würde jedes Speichern die
+      // Ortsverfolgung unbemerkt zurücksetzen). Neue Orte bekommen eine frische ID.
+      id = id || window.storage.makeId();
       var marker = L.marker([lat, lng], { draggable: true }).addTo(map);
       var circle = L.circle([lat, lng], { radius: radiusMeters(), color: '#3f6fd1', weight: 1.5, fillOpacity: 0.12 }).addTo(map);
 
@@ -143,7 +146,7 @@
 
     function setLocations(list) {
       clearAll();
-      (list || []).forEach(function (loc) { addLocation(loc.lat, loc.lng, loc.label); });
+      (list || []).forEach(function (loc) { addLocation(loc.lat, loc.lng, loc.label, loc.id); });
       if (locations.length) {
         var group = L.featureGroup(Object.keys(markers).map(function (id) { return markers[id].marker; }));
         map.fitBounds(group.getBounds().pad(0.4), { maxZoom: PIN_ZOOM });

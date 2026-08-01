@@ -218,7 +218,117 @@ Zugangsdaten, die hier nicht vorliegen):
    erscheint – ungetestet aus demselben Grund wie Phase 4 (kein Android-SDK/
    Gerät in dieser Umgebung).
 
-Die weiteren Phasen (Testing/Release) sind noch offen.
+**Phase 7 – Testing/Release** ist so weit umgesetzt, wie es ohne
+Android-SDK/Gerät und ohne echte Store-/AdMob-Zugangsdaten in dieser
+Umgebung möglich ist:
+
+- **Build-Verifikation geprüft, nicht möglich:** Ein echter Gradle-Build
+  würde den Download von Android-SDK-Komponenten von Google-Servern
+  benötigen (`dl.google.com`, `android.clients.google.com`). Diese sind über
+  die Proxy-Policy dieser Umgebung mit 403 (Org-Denial) blockiert – kein
+  Workaround, da explizite Richtlinien-Entscheidung, keine technische
+  Einschränkung. Der native Android-Teil des Projekts wurde daher nie
+  kompiliert; das ist der wichtigste Punkt für den Testplan auf einem
+  echten Gerät (siehe Checkliste unten).
+- **Code-Review-Pass:** Gezielte Durchsicht aller JS-Module auf Bugs/
+  Race-Conditions. Drei echte Fehler gefunden und behoben:
+  - `map.js`: Beim Bearbeiten eines bestehenden Orts-Zeit-Weckers wurden
+    Orts-IDs bei jedem Speichern neu vergeben statt erhalten zu bleiben –
+    dadurch wurde der Ankunfts-/Abfahrts-Tracking-Zustand (`wasInside`)
+    unbemerkt zurückgesetzt, was Abfahrt-Auslösungen nach einer Bearbeitung
+    verschlucken konnte.
+  - `alarmSound.js`: `start()` war nicht idempotent – ein doppelt
+    feuerndes Notification-Event hätte das laufende Ton-/Vibrations-
+    Intervall überschreiben können, sodass es sich nicht mehr stoppen ließ
+    (endloses Piepsen). `start()` ist jetzt sicher mehrfach aufrufbar.
+  - `ads.js`: Race Condition – wurde ein Orts-Zeit-Wecker weggewischt,
+    während die (potenziell lange auf Nutzerinteraktion wartende)
+    DSGVO-Einwilligung noch offen war, konnte danach trotzdem noch ein
+    Banner erscheinen, obwohl der Klingel-Bildschirm längst geschlossen
+    war. Per Generation-Token behoben.
+  - Alle Fixes per Playwright regressionsgetestet (siehe Testergebnisse in
+    der Commit-Historie).
+- **Eigenes App-Icon + Splash-Screen:** Ersetzt die generischen
+  Capacitor-Standard-Platzhalter (blaues „X"-Logo) durch ein selbst
+  gestaltetes Wecker-Icon (passend zum dunklen App-Theme, generiert über
+  `@capacitor/assets` aus den Quelldateien in `assets/`). Der bisherige
+  weiße Standard-Splash wäre beim App-Start als Blitzer gegen das dunkle
+  Theme aufgefallen – auch das ist jetzt konsistent dunkel.
+- **Release-Signing vorbereitet, kein echter Schlüssel erzeugt:** Das
+  Erzeugen eines Signing-Keys ist eine sicherheitskritische,
+  unumkehrbare Entscheidung, die dem Projektinhaber gehören muss (ein
+  verlorener/kompromittierter Schlüssel bedeutet dauerhaften Verlust der
+  Fähigkeit, Updates für dieselbe App im Play Store zu veröffentlichen) –
+  das wurde hier bewusst nicht automatisiert. Stattdessen: fertiges
+  Signing-Gerüst in `android/app/build.gradle`, das eine git-ignorierte
+  `android/keystore.properties` erwartet (Vorlage:
+  `android/keystore.properties.example`). Ohne diese Datei bleibt der
+  Release-Build unsigniert (z. B. für CI-Kompilierchecks ohne
+  Veröffentlichung).
+- **ProGuard/R8 bewusst deaktiviert gelassen** (`minifyEnabled false`):
+  Capacitor-Plugins registrieren teils über Reflection; ohne die
+  Möglichkeit, einen minifizierten Build tatsächlich zu testen, wäre das
+  Risiko eines kaputten Release-Builds größer als der Vorteil einer
+  kleineren APK.
+- **Versionsnummern**: `versionCode 1` / `versionName "1.0.0"`
+  (`android/app/build.gradle`), passend zu `package.json`.
+- **Datenschutzerklärung** (`PRIVACY.md`): Entwurf basierend auf den
+  tatsächlichen Datenflüssen der App (Standort lokal ausgewertet,
+  Nominatim/OSM-Netzwerkanfragen, AdMob/UMP). Mit deutlich markierten
+  Platzhaltern für Anbieterkennzeichnung/Kontakt, die nur der
+  Projektinhaber ausfüllen kann – **kein** rechtsverbindlicher Text, vor
+  Veröffentlichung rechtlich prüfen lassen und auf einer öffentlich
+  erreichbaren URL hosten (Play Store verlangt eine URL, keine Datei im
+  Repo).
+
+### Konsolidierte Checkliste vor der Store-Veröffentlichung
+
+Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
+
+**Technisch / Build**
+1. `npx cap sync android`, Projekt in Android Studio öffnen, echten
+   Gradle-Build durchführen (hier nie geschehen – höchste Priorität, da der
+   native Teil inkl. aller Plugin-Manifest-Merges ungetestet ist).
+2. Signing-Key erzeugen (`keytool -genkeypair -v -keystore release.keystore
+   -alias weckerundort -keyalg RSA -keysize 2048 -validity 10000`), sicher
+   verwahren/sichern (Passwort-Manager + Backup – bei Verlust ist die App
+   im Play Store nicht mehr aktualisierbar), `android/keystore.properties`
+   aus der `.example`-Vorlage befüllen.
+3. Signierten Release-Build/App Bundle erzeugen und auf einem echten Gerät
+   installieren und durchtesten (nicht nur Emulator, wegen Akku-/
+   Doze-Verhalten).
+4. Optional: `minifyEnabled true` erst NACH erfolgreichem Test des
+   signierten Release-Builds evaluieren (kleinere APK, aber Regressionsrisiko
+   bei Reflection-basierten Plugins).
+
+**Standort/Hintergrund (Phase 4)**
+5. Testplan aus Phase 4 abarbeiten: Berechtigungsdialog, App aus Recents
+   wegwischen + Auslösung testen, Doze-Modus über Nacht, Geräte-Neustart,
+   Akkuverbrauch über 24 h, mindestens ein Gerät mit aggressivem
+   Akku-Management (Xiaomi/MIUI o. ä.).
+6. Google-Play-Formular „Zugriff auf Standortdaten im Hintergrund"
+   ausfüllen (ohne Freigabe wird die App abgelehnt).
+
+**Werbung/Monetarisierung (Phase 6)**
+7. Echtes AdMob-Konto anlegen, App registrieren, echte App-ID/Ad-Unit-ID in
+   `android/app/src/main/res/values/strings.xml` (`admob_app_id`) und
+   `BANNER_AD_UNIT_ID` in `www/js/ads.js` eintragen.
+8. GDPR-/UMP-Consent-Nachrichten in der AdMob-Konsole konfigurieren.
+9. Auf echtem Gerät verifizieren: Banner lädt, Consent-Formular erscheint,
+   „Werbe-Einwilligung verwalten" funktioniert.
+
+**Store-Listing / Rechtliches**
+10. `PRIVACY.md` mit echten Anbieterangaben füllen, rechtlich prüfen lassen,
+    öffentlich hosten, URL in der Play-Console-Store-Eintragung hinterlegen.
+11. Play-Console Data-Safety-Abschnitt ausfüllen (Standort, Werbe-ID,
+    Geräte-ID – passend zu `PRIVACY.md`).
+12. Store-Listing erstellen: Kurz-/Vollbeschreibung, Screenshots (auf
+    echtem Gerät nach Punkt 3 aufnehmen), Content-Rating-Fragebogen
+    (Werbung, Standortzugriff).
+13. App-Icon/Store-Grafiken final prüfen – das neue Icon
+    (`assets/icon-*.png`) ist ein erster fertiger Entwurf, kein
+    zwingend endgültiges Markenzeichen; bei Bedarf durch professionelles
+    Design ersetzen.
 
 ## Entwicklung
 

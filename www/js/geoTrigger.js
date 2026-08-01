@@ -146,9 +146,8 @@
         if (fired) {
           markTriggered(alarm, now);
           changed = true;
-          window.storage.locationAlarms.upsert(alarm);
           triggerCallback(alarm);
-          break; // ein Alarm pro Positions-Update ist genug
+          break; // ein Alarm pro Positions-Update ist genug; changed=true speichert unten die ganze Liste
         }
       }
 

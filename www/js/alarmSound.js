@@ -30,6 +30,12 @@
   }
 
   function startSound() {
+    // Idempotent: ohne dieses Clearing wuerde ein zweiter start()-Aufruf ohne
+    // vorheriges stop() (z.B. durch ein doppelt feuerndes Notification-Event)
+    // das laufende Intervall ueberschreiben statt zu ersetzen - das Original
+    // liefe dann unstoppbar im Hintergrund weiter, da stop() nur noch das
+    // neuere Intervall kennt.
+    if (beepIntervalId) clearInterval(beepIntervalId);
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       playBeepCycle();
@@ -60,6 +66,7 @@
   }
 
   function startVibration() {
+    if (vibrateIntervalId) clearInterval(vibrateIntervalId);
     vibratePulse();
     vibrateIntervalId = setInterval(vibratePulse, 900);
   }
