@@ -26,6 +26,7 @@
           <div class="empty-state" data-i18n="locationAlarm.empty">Noch keine Orts-Zeit-Wecker. Tippe auf + zum Hinzufügen.</div>
           <button type="button" class="tile tile-add" data-i18n-aria-label="locationAlarm.add">+</button>
         </div>
+        <button type="button" id="privacy-options-link" class="text-link" data-i18n="locationAlarm.privacyOptions" hidden>Werbe-Einwilligung verwalten</button>
       </section>
 
       <section id="tab-stopwatch" class="tab-panel">
@@ -355,7 +356,7 @@
   </div>
 
   <div id="location-ringing-overlay" class="ringing-overlay location-ringing-overlay">
-    <div class="location-ringing-ad" data-i18n="locationAlarm.adPlaceholder">Werbefläche (Platzhalter)</div>
+    <div id="location-ringing-ad" class="location-ringing-ad"></div>
     <div class="location-ringing-body">
       <div id="location-ringing-title" class="ringing-title location-ringing-title">Orts-Zeit-Wecker</div>
       <div id="location-ringing-description" class="location-ringing-description"></div>
@@ -386,6 +387,7 @@
   <script src="js/storage.js"></script>
   <script src="js/notifications.js"></script>
   <script src="js/alarmSound.js"></script>
+  <script src="js/ads.js"></script>
   <script src="js/ringing.js"></script>
   <script src="js/alarms.js"></script>
   <script src="js/stopwatch.js"></script>

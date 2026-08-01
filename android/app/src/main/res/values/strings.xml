@@ -8,4 +8,11 @@
     <!-- @capgo/background-geolocation: Name des Benachrichtigungskanals für die
          dauerhafte Hintergrund-Standort-Anzeige (Android-Pflicht ab API 26). -->
     <string name="capacitor_background_geolocation_notification_channel_name">Standort-Überwachung für Orts-Zeit-Wecker</string>
+
+    <!-- Phase 6, @capacitor-community/admob: Googles offizielle, öffentlich
+         dokumentierte TEST-App-ID (https://developers.google.com/admob/android/test-ads).
+         Zeigt zuverlässig als "Test Ad" markierte Anzeigen, generiert aber keinen
+         Umsatz. Vor Store-Release durch die echte AdMob-App-ID aus einem eigenen
+         AdMob-Konto ersetzen - siehe README, Abschnitt Phase 6. -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
 </resources>

@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var overlay, titleEl, descriptionEl, swipeTrack, swipeHandle, swipeHint;
+  var overlay, adSpace, titleEl, descriptionEl, swipeTrack, swipeHandle, swipeHint;
   var activeAlarm = null;
   var onStopCallback = null;
 
@@ -61,12 +61,17 @@
     document.body.classList.add('is-ringing');
 
     window.alarmSound.start(alarm.sound || 'both');
+    // Native Anzeige liegt als eigenständige Systemansicht ÜBER der WebView
+    // und wird nicht über adSpace ins DOM eingehängt - adSpace bleibt nur die
+    // reservierte Freifläche (siehe CSS) plus Web-Vorschau-Platzhaltertext.
+    window.ads.showLocationRingingBanner();
   }
 
   function stop() {
     window.alarmSound.stop();
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
+    window.ads.hideLocationRingingBanner();
     var alarm = activeAlarm;
     var cb = onStopCallback;
     activeAlarm = null;
@@ -76,6 +81,10 @@
 
   function init() {
     overlay = document.getElementById('location-ringing-overlay');
+    adSpace = document.getElementById('location-ringing-ad');
+    if (adSpace && !window.ads.isNative()) {
+      adSpace.textContent = window.i18n.t('locationAlarm.adPlaceholder');
+    }
     titleEl = document.getElementById('location-ringing-title');
     descriptionEl = document.getElementById('location-ringing-description');
     swipeTrack = document.getElementById('location-ringing-swipe-track');

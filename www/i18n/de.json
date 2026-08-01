@@ -74,6 +74,7 @@
   "locationAlarm.locationSingular": "Ort",
   "locationAlarm.locationPlural": "Orte",
   "locationAlarm.adPlaceholder": "Werbefläche (Platzhalter)",
+  "locationAlarm.privacyOptions": "Werbe-Einwilligung verwalten",
   "locationAlarm.notificationBody": "Orts-Zeit-Wecker ausgelöst",
 
   "bgPermission.title": "Standort immer erlauben",

@@ -18,6 +18,7 @@
 
         window.Notify.createChannels();
         window.Notify.requestPermissions();
+        window.ads.init();
       });
   });
 })();

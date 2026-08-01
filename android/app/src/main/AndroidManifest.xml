@@ -33,6 +33,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Phase 6, @capacitor-community/admob. admob_app_id (strings.xml) ist
+             aktuell Googles offizielle TEST-App-ID - vor Store-Release durch die
+             echte AdMob-App-ID ersetzen (siehe README). -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id" />
     </application>
 
     <!-- Permissions -->

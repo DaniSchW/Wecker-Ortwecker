@@ -697,6 +697,19 @@ body.is-ringing .bottom-nav {
   color: var(--color-accent-contrast);
 }
 
+.text-link {
+  display: block;
+  margin: 16px auto 0;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .field-hint {
   margin: 0;
   font-size: 12px;

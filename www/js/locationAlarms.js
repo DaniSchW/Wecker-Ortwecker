@@ -10,6 +10,7 @@
   var commuteCheckbox, commuteOptions, commuteDayButtons, commuteStart, commuteEnd;
   var soundInputs, deleteBtn;
   var bgModal, bgAllowBtn, bgLaterBtn;
+  var privacyOptionsLink;
   var picker = null;
   var editingId = null;
   var geoStarted = false;
@@ -347,6 +348,12 @@
     bgAllowBtn.addEventListener('click', requestBackgroundPermissionFromModal);
     bgLaterBtn.addEventListener('click', dismissBackgroundPrompt);
     bgModal.querySelector('.modal-backdrop').addEventListener('click', dismissBackgroundPrompt);
+
+    privacyOptionsLink = document.getElementById('privacy-options-link');
+    privacyOptionsLink.addEventListener('click', function () { window.ads.openPrivacyOptions(); });
+    window.ads.init().then(function () {
+      privacyOptionsLink.hidden = !window.ads.canManagePrivacyOptions();
+    });
 
     picker = window.locationPicker.create(document.getElementById('location-picker-root'));
 

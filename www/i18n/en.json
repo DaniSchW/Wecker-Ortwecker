@@ -74,6 +74,7 @@
   "locationAlarm.locationSingular": "location",
   "locationAlarm.locationPlural": "locations",
   "locationAlarm.adPlaceholder": "Ad space (placeholder)",
+  "locationAlarm.privacyOptions": "Manage ad consent",
   "locationAlarm.notificationBody": "Location alarm triggered",
 
   "bgPermission.title": "Allow location all the time",

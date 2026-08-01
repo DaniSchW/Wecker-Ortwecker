@@ -63,8 +63,8 @@ Sperrbildschirm-Fall ist für Phase 4/7 (echtes Gerät) vorgesehen.
   Bedingungen im Vordergrund aus (Haversine-Distanz, Ankunft/Abfahrt-Erkennung
   je Ort in der Gruppe, Perioden-Reset). Echtes Background-Geofencing über ein
   natives Plugin ist bewusst Phase 4 vorbehalten.
-- **Auslöse-Bildschirm**: Werbefläche (Platzhalter, ~50 % der Höhe – echtes
-  AdMob folgt in Phase 6), Titel + Beschreibung darunter, Stopp per Swipe,
+- **Auslöse-Bildschirm**: Werbefläche (~50 % der Höhe, echtes AdMob-Banner
+  seit Phase 6), Titel + Beschreibung darunter, Stopp per Swipe,
   Ton/Vibration/Beides wie beim Standard-Wecker (gemeinsame Logik in
   `www/js/alarmSound.js`).
 
@@ -175,7 +175,50 @@ abzuarbeiten):
 - Wird ein Wecker gelöscht oder ausgeschaltet, während ein Schlummern
   aussteht, wird auch die geplante Schlummer-Benachrichtigung storniert.
 
-Die weiteren Phasen (Werbung/Monetarisierung, Testing/Release) sind noch offen.
+**Phase 6 – Werbung/Monetarisierung** ist technisch umgesetzt, aber mit
+Google-Test-IDs statt einem echten AdMob-Konto (siehe unten):
+
+- **Plugin**: [`@capacitor-community/admob`](https://github.com/capacitor-community/admob)
+  (aktiv gepflegt, passend zu Capacitor 8).
+- **DSGVO/UMP-Einwilligung**: Beim App-Start (`js/ads.js`) läuft die von Google
+  vorgeschriebene Reihenfolge `AdMob.initialize` → `requestConsentInfo` →
+  `showConsentForm` (nur falls laut Konsent-Status erforderlich) → erst danach
+  darf überhaupt eine Anzeige angefragt werden. Ohne erteilte/nicht-benötigte
+  Einwilligung (`canRequestAds`) wird kein Banner angefragt. Deutsche
+  Zielgruppe = EWR/DSGVO-Pflicht, das war hier nicht optional.
+- **Banner**: Ersetzt die bisherige Text-Platzhalterfläche im
+  Orts-Zeit-Wecker-Auslöse-Bildschirm (oberste ~50 % der Höhe). Format
+  `MEDIUM_RECTANGLE`, Position `TOP_CENTER`, an- und abgeschaltet synchron
+  mit dem Öffnen/Schließen des Klingel-Overlays. Technischer Hinweis: Der
+  native Banner ist eine eigenständige Systemansicht über der WebView, kein
+  DOM-Element – die reservierte Fläche im Layout bleibt daher leer, das
+  Overlay legt sich optisch darüber. Im Browser/Web-Fallback (kein natives
+  Plugin verfügbar) bleibt der bisherige Text-Platzhalter erhalten.
+- **Einwilligung verwalten**: Kleiner Link im Orts-Zeit-Wecker-Tab
+  („Werbe-Einwilligung verwalten“, nur sichtbar wenn laut AdMob nötig), öffnet
+  `AdMob.showPrivacyOptionsForm()` – von Google für UMP vorgeschrieben, damit
+  Nutzer ihre Einwilligung jederzeit ändern können, nicht nur beim ersten Start.
+
+**Was noch vor einem echten Store-Release fehlt** (nicht automatisierbar ohne
+Zugangsdaten, die hier nicht vorliegen):
+
+1. Ein echtes Google-AdMob-Konto anlegen und die App darin registrieren, um
+   eine echte App-ID und Ad-Unit-ID zu erhalten.
+2. `android/app/src/main/res/values/strings.xml` (`admob_app_id`) und
+   `BANNER_AD_UNIT_ID` in `www/js/ads.js` durch die echten IDs ersetzen – aktuell
+   stehen dort Googles offizielle, öffentlich dokumentierte TEST-IDs
+   (`ca-app-pub-3940256099942544...`). Diese zeigen zuverlässig als "Test Ad"
+   markierte Anzeigen, erzeugen aber keinerlei Umsatz.
+3. In der AdMob-Konsole eigene GDPR-/UMP-Consent-Nachrichten konfigurieren
+   (ohne das zeigt `requestConsentInfo` ggf. gar kein Formular an).
+4. In der Play Console die Werbe-Angabe und den Data-Safety-Abschnitt
+   entsprechend ausfüllen (Standortdaten + Werbe-ID werden verwendet).
+5. Auf einem echten Gerät verifizieren, dass Banner tatsächlich geladen werden
+   und die Einwilligungs-UI (Formular + „Einwilligung verwalten“-Link) korrekt
+   erscheint – ungetestet aus demselben Grund wie Phase 4 (kein Android-SDK/
+   Gerät in dieser Umgebung).
+
+Die weiteren Phasen (Testing/Release) sind noch offen.
 
 ## Entwicklung
 
