@@ -1,0 +1,250 @@
+:root {
+  color-scheme: dark;
+
+  --color-bg: #121318;
+  --color-surface: #1c1e26;
+  --color-surface-raised: #24272f;
+  --color-border: #33363f;
+  --color-text: #eceef2;
+  --color-text-muted: #9297a3;
+  --color-accent: #8ab4ff;
+  --color-accent-contrast: #0b1020;
+  --color-danger: #ff6b6b;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+
+  --nav-height: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  padding: 20px 20px 8px;
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+.tab-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+}
+
+.tab-panel {
+  display: none;
+  padding: 12px 16px 24px;
+}
+
+.tab-panel.is-active {
+  display: block;
+}
+
+.empty-state {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 48px 24px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Tile grid layout: Wecker & Orts-Zeit-Wecker */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* Timer tab: tiles stacked in a single column */
+.tile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tile {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.tile-add {
+  background: transparent;
+  border: 1.5px dashed var(--color-border);
+  color: var(--color-text-muted);
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  cursor: pointer;
+}
+
+.tile-add:active {
+  background: var(--color-surface-raised);
+}
+
+/* Stopwatch: outer ring with digital time inside */
+.stopwatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 8px;
+}
+
+.stopwatch-ring {
+  position: relative;
+  width: min(72vw, 280px);
+  height: min(72vw, 280px);
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 6px solid var(--color-surface-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stopwatch-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.stopwatch-ring circle {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.stopwatch-ring .ring-track {
+  stroke: var(--color-surface-raised);
+}
+
+.stopwatch-ring .ring-progress {
+  stroke: var(--color-accent);
+  transition: stroke-dashoffset 0.2s linear;
+}
+
+.stopwatch-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 15vw;
+  max-font-size: 44px;
+  font-size: clamp(28px, 9vw, 44px);
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.stopwatch-controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.btn-round {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-round.primary {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.btn-round.secondary {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.lap-list {
+  margin-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.lap-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+/* Bottom tab navigation */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  display: flex;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.nav-item {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.nav-item .nav-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.nav-item.is-active {
+  color: var(--color-accent);
+}

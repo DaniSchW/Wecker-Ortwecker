@@ -1,0 +1,9 @@
+{
+  "appId": "app.weckerundort.mobile",
+  "appName": "Wecker & Ortswecker",
+  "webDir": "www",
+  "backgroundColor": "#121318",
+  "android": {
+    "backgroundColor": "#121318"
+  }
+}

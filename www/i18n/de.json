@@ -1,0 +1,18 @@
+{
+  "app.name": "Wecker & Ortswecker",
+  "tabs.alarm": "Wecker",
+  "tabs.locationAlarm": "Orts-Zeit-Wecker",
+  "tabs.stopwatch": "Stoppuhr",
+  "tabs.timer": "Timer",
+  "alarm.empty": "Noch keine Wecker. Tippe auf + zum Hinzufügen.",
+  "alarm.add": "Wecker hinzufügen",
+  "locationAlarm.empty": "Noch keine Orts-Zeit-Wecker. Tippe auf + zum Hinzufügen.",
+  "locationAlarm.add": "Orts-Zeit-Wecker hinzufügen",
+  "stopwatch.start": "Start",
+  "stopwatch.stop": "Stopp",
+  "stopwatch.reset": "Zurücksetzen",
+  "stopwatch.lap": "Runde",
+  "stopwatch.noLaps": "Noch keine Rundenzeiten.",
+  "timer.empty": "Noch keine Timer. Tippe auf + zum Hinzufügen.",
+  "timer.add": "Timer hinzufügen"
+}

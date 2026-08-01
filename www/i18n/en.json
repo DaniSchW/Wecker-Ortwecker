@@ -1,0 +1,18 @@
+{
+  "app.name": "Alarm & Location Reminder",
+  "tabs.alarm": "Alarm",
+  "tabs.locationAlarm": "Location Alarm",
+  "tabs.stopwatch": "Stopwatch",
+  "tabs.timer": "Timer",
+  "alarm.empty": "No alarms yet. Tap + to add one.",
+  "alarm.add": "Add alarm",
+  "locationAlarm.empty": "No location alarms yet. Tap + to add one.",
+  "locationAlarm.add": "Add location alarm",
+  "stopwatch.start": "Start",
+  "stopwatch.stop": "Stop",
+  "stopwatch.reset": "Reset",
+  "stopwatch.lap": "Lap",
+  "stopwatch.noLaps": "No lap times yet.",
+  "timer.empty": "No timers yet. Tap + to add one.",
+  "timer.add": "Add timer"
+}
