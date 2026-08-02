@@ -281,5 +281,12 @@
     render();
   }
 
-  window.alarmsTab = { init: init, render: render };
+  function rescheduleAll() {
+    window.storage.alarms.getAll().forEach(function (alarm) {
+      if (alarm.enabled) scheduleAlarm(alarm);
+    });
+    render();
+  }
+
+  window.alarmsTab = { init: init, render: render, rescheduleAll: rescheduleAll };
 })();

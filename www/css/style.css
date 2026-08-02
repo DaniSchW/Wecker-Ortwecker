@@ -55,6 +55,10 @@ body {
 .app-header {
   padding: 20px 20px 8px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .app-header h1 {
@@ -62,6 +66,24 @@ body {
   font-size: 22px;
   font-weight: 500;
   letter-spacing: 0.1px;
+}
+
+.settings-btn {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.settings-btn .nav-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.settings-data-status {
+  min-height: 1.4em;
+}
+
+.settings-data-status.is-error {
+  color: var(--color-danger);
 }
 
 .tab-content {

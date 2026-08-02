@@ -387,5 +387,10 @@
     syncTracking();
   }
 
-  window.locationAlarmsTab = { init: init, render: render };
+  function resyncAll() {
+    render();
+    syncTracking();
+  }
+
+  window.locationAlarmsTab = { init: init, render: render, resyncAll: resyncAll };
 })();

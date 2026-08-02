@@ -374,6 +374,58 @@ Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
     zwingend endgültiges Markenzeichen; bei Bedarf durch professionelles
     Design ersetzen.
 
+### Export-/Import-Funktion für Wecker-Daten (Sicherung/Wiederherstellung)
+
+Über ein neues Zahnrad-Icon im Header (`Einstellungen`) lassen sich alle
+gespeicherten Standard-Wecker und Orts-Zeit-Wecker als JSON-Datei sichern
+und daraus wiederherstellen – unabhängig vom normalen App-Update-Prozess,
+z. B. als Absicherung vor einer Neuinstallation. Explizit **nicht**
+enthalten sind Timer/Tabata-Presets (laut Aufgabenstellung nur Wecker +
+Orts-Zeit-Wecker).
+
+- **Plugin-Wahl**: Für einen echten SAF-„Speicherort wählen"-Dialog
+  (`ACTION_CREATE_DOCUMENT`) gibt es kein aktiv gepflegtes
+  Capacitor-8-Plugin mit klarer API. Stattdessen die Kombination aus
+  offiziellen, aktiv gepflegten Plugins gewählt:
+  `@capacitor/filesystem` schreibt die Sicherungsdatei ins
+  App-private `Directory.Cache` (keine zusätzliche Android-Berechtigung
+  nötig), `@capacitor/share` öffnet danach das native Android-Share-Sheet
+  – der Nutzer wählt darüber effektiv das Ziel (z. B. „In Dateien
+  speichern", Google Drive, E-Mail an sich selbst). Für den Import kommt
+  `@capawesome/capacitor-file-picker` zum Einsatz (Dateiauswahl-Dialog).
+  Alle drei sind gegen Capacitor 8 kompatibel; keines der drei verlangt
+  zusätzliche `<uses-permission>`-Einträge im Manifest.
+- **Web-Fallback**: Ohne natives Plugin (Browser-Vorschau) läuft Export
+  über einen Blob-Download (`<a download>`), Import über ein verstecktes
+  `<input type="file">` + `FileReader`.
+- **Datenformat**: `{ app: 'wecker-ortswecker', exportVersion: 1,
+  exportedAt: <ISO-Zeitstempel>, alarms: [...], locationAlarms: [...] }`
+  – die rohen `storage.js`-Datensätze, unverändert. `app`/`exportVersion`
+  werden beim Import geprüft; eine Datei ohne diese Kennung wird als
+  ungültig abgelehnt statt sie ungeprüft zu übernehmen.
+- **Import ist nicht-destruktiv**: Datensätze werden per `id` einzeln
+  per `upsert` eingespielt (bestehende, nicht in der Sicherung enthaltene
+  Wecker bleiben erhalten; Wecker mit übereinstimmender ID werden
+  überschrieben). Es wird nie die komplette lokale Liste ersetzt.
+- **Reschedule nach Import**: Importierte Wecker/Orts-Zeit-Wecker
+  enthalten ggf. `notificationIds`, die auf einer frischen Installation
+  gar nicht (mehr) existieren. Nach dem Import werden deshalb
+  `alarmsTab.rescheduleAll()` (storniert alte IDs, plant alle aktiven
+  Wecker neu) und `locationAlarmsTab.resyncAll()` (Neuzeichnen der
+  Kacheln + `syncTracking()` für Vordergrund-Geolocation und native
+  Geofences) aufgerufen.
+- **Unicode**: Die Basis64-kodierten Datei-Inhalte vom File-Picker-Plugin
+  werden über `TextDecoder('utf-8')` dekodiert (nicht per einfachem
+  `atob()`), damit Umlaute/Sonderzeichen in Bezeichnungen/Beschreibungen
+  korrekt erhalten bleiben – mit Playwright-Testdaten verifiziert.
+- **Getestet** wurde der komplette Web-Fallback-Roundtrip (Export →
+  Storage leeren, simuliert Neuinstallation → Import → Datenintegrität,
+  Reschedule, UI-Refresh) sowie der Fehlerfall einer ungültigen/fremden
+  JSON-Datei per Playwright. Der native Pfad (Filesystem/Share/
+  File-Picker-Plugin) ist – wie alle nativen Plugins in diesem Projekt –
+  nur auf einem echten Gerät abschließend verifizierbar, da hier kein
+  Android-SDK/Gerät zur Verfügung steht.
+
 ## Entwicklung
 
 ```bash

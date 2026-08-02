@@ -15,6 +15,7 @@
         window.timerTab.init();
         window.tabataTab.init();
         window.locationAlarmsTab.init();
+        window.settingsData.init();
 
         window.Notify.createChannels();
         window.Notify.requestPermissions();
