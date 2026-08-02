@@ -426,6 +426,64 @@ Orts-Zeit-Wecker).
   nur auf einem echten Gerät abschließend verifizierbar, da hier kein
   Android-SDK/Gerät zur Verfügung steht.
 
+### Geocoding-Ergänzung im Ort-Textfeld (Orts-Zeit-Wecker)
+
+Die Adresssuche im Kartenauswahl-Widget (`js/map.js`) gab es schon seit
+Phase 3 (Nominatim-Anfrage + klickbare Trefferliste); folgende Punkte wurden
+gezielt ergänzt:
+
+- **Automatischer Pin**: Der jeweils beste Treffer wird jetzt direkt als Pin
+  auf der Karte gesetzt (nicht mehr erst nach Klick auf einen Listeneintrag
+  nötig). Tippt der Nutzer weiter und die Anfrage liefert ein neues
+  Ergebnis, wird derselbe Pin verschoben statt einen weiteren anzuhäufen –
+  dafür merkt sich `map.js` die ID des zuletzt automatisch gesetzten Orts
+  (`autoMarkerId`) und aktualisiert nur diesen. Die Trefferliste bleibt
+  weiterhin sichtbar, falls der Nutzer statt des Top-Treffers einen anderen
+  Treffer meint (z. B. gleichnamige Straße in einer anderen Stadt) – ein
+  Klick darauf verschiebt ebenfalls nur den einen Pin, statt einen weiteren
+  hinzuzufügen. Wird der Pin danach manuell auf der Karte verschoben oder
+  über die Orte-Liste entfernt, "löst" er sich von der Automatik – eine
+  neue Suche legt dann wieder einen frischen Pin an, statt den vom Nutzer
+  bewusst gesetzten zu überschreiben. Ein Tippen/Tap direkt auf die Karte
+  fügt weiterhin immer einen unabhängigen, zusätzlichen Ort hinzu (mehrere
+  Orte pro Orts-Zeit-Wecker sind ja ein bestehendes Feature).
+- **Debounce auf 500 ms**: Die Anfrage läuft frühestens 500 ms nach dem
+  letzten Tastenanschlag (vorher 400 ms), um die Anfragen-Rate gegenüber
+  Nominatim niedrig zu halten. Zusätzlich verwirft ein einfacher
+  Token-Zähler veraltete Antworten, falls trotz Debounce eine ältere
+  Anfrage nach einer neueren beantwortet wird.
+- **Fehleranzeige im UI**: Statt Fehler/leere Trefferlisten wie bisher
+  still zu verwerfen, zeigt ein Hinweistext unter dem Suchfeld jetzt
+  „Adresse nicht gefunden – Pin manuell auf der Karte setzen." (keine
+  Treffer) bzw. „Keine Internetverbindung – Pin manuell auf der Karte
+  setzen." (Netzwerk-/HTTP-Fehler) an. Ein bereits gesetzter Pin bleibt in
+  beiden Fällen unangetastet erhalten.
+- **User-Agent-Header**: Nominatims Nutzungsbedingungen verlangen einen
+  aussagekräftigen User-Agent oder Referer zur Identifikation der
+  Anwendung. Im Browser lässt sich der `User-Agent`-Header aus
+  Sicherheitsgründen grundsätzlich nicht per `fetch()` überschreiben (von
+  keiner Web-App, nicht nur dieser) – dort identifiziert sich die Anfrage
+  weiterhin über den echten Browser-User-Agent. Auf einem echten Gerät
+  läuft die Anfrage stattdessen über das in `@capacitor/core` eingebaute
+  `CapacitorHttp`-Plugin (kein Zusatzpaket nötig), das nativ anfragt und
+  beliebige Header inkl. `User-Agent` setzen kann. Der aktuelle Wert
+  (`WeckerOrtswecker/1.0.0 (app.weckerundort.mobile; Kontakt:
+  [PLATZHALTER: E-Mail-Adresse])`, `js/map.js`) enthält bewusst denselben
+  Platzhalter-Hinweis wie schon `PRIVACY.md` – vor Live-Schaltung durch
+  eine echte Kontaktadresse ersetzen.
+- **Getestet** wurde der komplette Web-Fallback-Ablauf (Treffer → Pin
+  setzen, weiterer Treffer → Pin verschieben statt duplizieren, Klick auf
+  Alternativtreffer, keine Treffer → Fehlertext, Netzwerkfehler →
+  Fehlertext, manueller Kartenklick bleibt unabhängig, Debounce/Race
+  vermeidet Mehrfachanfragen, zu kurze Eingabe löst keine Anfrage aus) per
+  Playwright mit gemockten Nominatim-Antworten, da `nominatim.
+  openstreetmap.org` von dieser Umgebung aus nicht erreichbar ist. Der
+  native `CapacitorHttp`-Pfad wurde separat mit einem gemockten
+  `CapacitorHttp`-Plugin verifiziert (korrekter `User-Agent`-Header,
+  Fehlerbehandlung bei HTTP-Fehlerstatus) – die tatsächliche
+  Netzwerk-Auslieferung auf einem echten Gerät ist wie bei allen nativen
+  Integrationen in diesem Projekt nur dort abschließend prüfbar.
+
 ## Entwicklung
 
 ```bash

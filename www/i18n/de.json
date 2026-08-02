@@ -69,6 +69,8 @@
   "locationAlarm.radiusLabel": "Radius",
   "locationAlarm.mapHint": "Auf die Karte tippen oder Adresse suchen, um einen Ort hinzuzufügen. Mehrere Orte möglich – der Alarm löst beim ersten erreichten Ort aus.",
   "locationAlarm.noLocations": "Noch keine Orte hinzugefügt.",
+  "locationAlarm.geocodeNotFound": "Adresse nicht gefunden – Pin manuell auf der Karte setzen.",
+  "locationAlarm.geocodeNetworkError": "Keine Internetverbindung – Pin manuell auf der Karte setzen.",
   "locationAlarm.removeLocation": "Ort entfernen",
   "locationAlarm.triggerLabel": "Auslösen bei",
   "locationAlarm.arrival": "Ankunft",

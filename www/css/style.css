@@ -899,6 +899,22 @@ body.is-ringing .bottom-nav {
   background: var(--color-surface);
 }
 
+.location-picker-geocode-status {
+  display: none;
+  margin: -2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.location-picker-geocode-status.is-visible {
+  display: block;
+}
+
+.location-picker-geocode-status.is-error {
+  color: var(--color-danger);
+}
+
 .location-picker-map {
   height: 220px;
   border-radius: var(--radius-sm);
