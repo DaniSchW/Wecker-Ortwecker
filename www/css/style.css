@@ -953,6 +953,17 @@ body.is-ringing .bottom-nav {
   text-transform: uppercase;
 }
 
+/* Neutrale Marken-Fläche statt eines leeren/kaputt wirkenden Bereichs, wenn
+   keine Anzeige geladen werden konnte (z. B. keine Internetverbindung
+   unterwegs). */
+.location-ringing-ad.is-fallback-brand {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--color-accent);
+}
+
 .location-ringing-body {
   flex: 1;
   display: flex;
@@ -960,7 +971,11 @@ body.is-ringing .bottom-nav {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 20px 24px;
+  /* Oberer Puffer bewusst größer als der untere: AdMob-Richtlinien
+     verlangen einen Mindestabstand zwischen Anzeige und interaktiven
+     Elementen (hier: der Swipe-Bereich unten), damit keine versehentlichen
+     Klicks provoziert werden. */
+  padding: 40px 24px 20px;
   gap: 8px;
 }
 

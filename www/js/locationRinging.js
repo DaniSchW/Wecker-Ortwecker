@@ -47,6 +47,15 @@
     window.addEventListener('touchend', pointerUp);
   }
 
+  // Zeigt bei fehlender/fehlgeschlagener Anzeige eine neutrale, markenhafte
+  // Fläche statt eines leeren/kaputt wirkenden Bereichs (z. B. keine
+  // Internetverbindung unterwegs - typischer Fall bei einem Orts-Zeit-Wecker).
+  function setAdFallback(active) {
+    if (!adSpace) return;
+    adSpace.textContent = active ? window.i18n.t('app.name') : '';
+    adSpace.classList.toggle('is-fallback-brand', active);
+  }
+
   function show(alarm, stopCallback) {
     activeAlarm = alarm;
     onStopCallback = stopCallback;
@@ -61,10 +70,18 @@
     document.body.classList.add('is-ringing');
 
     window.alarmSound.start(alarm.sound || 'both');
-    // Native Anzeige liegt als eigenständige Systemansicht ÜBER der WebView
-    // und wird nicht über adSpace ins DOM eingehängt - adSpace bleibt nur die
-    // reservierte Freifläche (siehe CSS) plus Web-Vorschau-Platzhaltertext.
-    window.ads.showLocationRingingBanner();
+    if (window.ads.isNative()) {
+      // Native Anzeige liegt als eigenständige Systemansicht ÜBER der
+      // WebView und wird nicht über adSpace ins DOM eingehängt - adSpace
+      // bleibt nur die reservierte Freifläche (siehe CSS) und zeigt die
+      // Fallback-Fläche, falls keine Anzeige geladen werden konnte.
+      setAdFallback(false);
+      window.ads.showLocationRingingBanner().then(function (shown) {
+        // Nur noch relevant, wenn der Bildschirm nicht laengst wieder
+        // geschlossen wurde (sehr schnelles Wegwischen).
+        if (overlay.classList.contains('is-visible')) setAdFallback(!shown);
+      });
+    }
   }
 
   function stop() {
@@ -72,6 +89,7 @@
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
     window.ads.hideLocationRingingBanner();
+    setAdFallback(false);
     var alarm = activeAlarm;
     var cb = onStopCallback;
     activeAlarm = null;

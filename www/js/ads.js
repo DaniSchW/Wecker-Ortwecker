@@ -1,17 +1,46 @@
 (function () {
   'use strict';
 
-  // Googles offizielle TEST-Ad-Unit (https://developers.google.com/admob/android/test-ads).
-  // Liefert zuverlässig als "Test Ad" markierte Anzeigen, keinen echten Umsatz.
-  // Vor Store-Release durch die echte Ad-Unit-ID aus dem eigenen AdMob-Konto
-  // ersetzen (siehe README, Abschnitt Phase 6).
-  var BANNER_AD_UNIT_ID = 'ca-app-pub-3940256099942544/6300978111';
+  // Echte Ad-Unit aus dem eigenen AdMob-Konto (ersetzt die vorherige
+  // Google-Test-Ad-Unit aus Phase 6).
+  var BANNER_AD_UNIT_ID = 'ca-app-pub-8453553622026562/4356031602';
+
+  // MEDIUM_RECTANGLE (300x250dp) ist das größte feste AdMob-Bannerformat -
+  // es gibt kein Standardformat, das wirklich 50% Bildschirmhöhe füllt (das
+  // wäre ein anderer Anzeigentyp, kein Banner mehr). Die reservierte Fläche
+  // im CSS (~50% Höhe) ist daher bewusst größer als die Anzeige selbst;
+  // MEDIUM_RECTANGLE wird oben in dieser Fläche zentriert/verankert.
+  var BANNER_AD_SIZE = 'MEDIUM_RECTANGLE';
+  var BANNER_POSITION = 'TOP_CENTER';
+
+  // Ein per preload geladener, aber noch nicht gezeigter Banner wird beim
+  // tatsächlichen Klingeln wiederverwendet (resumeBanner statt neuem
+  // showBanner - deutlich schneller). Ist das Vorladen länger her als dieser
+  // Schwellwert, wird stattdessen eine frische Anzeige geladen, damit keine
+  // stark veraltete Anzeige gezeigt wird (Orts-Zeit-Wecker können Stunden
+  // nach dem Scharfschalten auslösen - das ist bewusst ein Kompromiss, keine
+  // von Google vorgegebene Regel; vor Live-Schaltung gegenprüfen, siehe
+  // README, Abschnitt "Phase 6 Ergänzung").
+  var MAX_PRELOAD_AGE_MS = 30 * 60 * 1000;
+
+  // Wie lange showLocationRingingBanner() maximal auf eine noch laufende
+  // Ladung wartet, bevor auf die neutrale Fallback-Anzeige (siehe
+  // locationRinging.js) ausgewichen wird, damit der Auslöse-Bildschirm nicht
+  // wegen einer langsamen/fehlenden Internetverbindung blockiert.
+  var SHOW_WAIT_TIMEOUT_MS = 4000;
 
   var initPromise = null;
   var canRequestAds = false;
   var privacyOptionsRequired = false;
-  var bannerVisible = false;
   var showToken = 0;
+
+  // idle: nichts geladen | loading: showBanner() laeuft | ready: geladen,
+  // aber versteckt (preload) | visible: aktuell sichtbar | failed: letzter
+  // Ladeversuch fehlgeschlagen
+  var bannerState = 'idle';
+  var preloadedAt = 0;
+  var loadWaiters = [];
+  var eventsWired = false;
 
   function isNative() {
     return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -19,6 +48,15 @@
 
   function plugin() {
     return window.Capacitor && window.Capacitor.Plugins ? window.Capacitor.Plugins.AdMob : null;
+  }
+
+  // Anknüpfungspunkt für ein späteres "Werbefrei"-In-App-Kauf (Phase 6,
+  // vollständige Umsetzung folgt separat). Liefert aktuell immer false, d.h.
+  // es wird ganz normal geladen/angezeigt. Sobald ein echter Kauf-Check
+  // existiert (z. B. Google Play Billing), reicht es, diese eine Funktion zu
+  // ersetzen - alle Aufrufer prüfen bereits vorher hier.
+  function hasAdFreePurchase() {
+    return false;
   }
 
   // Reihenfolge laut Plugin-Dokumentation zwingend: initialize -> requestConsentInfo
@@ -31,6 +69,8 @@
       initPromise = Promise.resolve();
       return initPromise;
     }
+
+    wireBannerEvents();
 
     initPromise = plugin()
       .initialize()
@@ -53,8 +93,78 @@
     return initPromise;
   }
 
+  function wireBannerEvents() {
+    if (eventsWired) return;
+    eventsWired = true;
+    plugin().addListener('bannerAdLoaded', function () {
+      if (bannerState === 'loading') bannerState = 'ready';
+      resolveLoadWaiters(true);
+    });
+    plugin().addListener('bannerAdFailedToLoad', function (err) {
+      console.error('ads: bannerAdFailedToLoad', err);
+      bannerState = 'failed';
+      resolveLoadWaiters(false);
+    });
+  }
+
+  function resolveLoadWaiters(success) {
+    var waiters = loadWaiters;
+    loadWaiters = [];
+    waiters.forEach(function (resolve) { resolve(success); });
+  }
+
+  function waitForLoad(timeoutMs) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        resolve(false);
+      }, timeoutMs);
+      loadWaiters.push(function (success) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(success);
+      });
+    });
+  }
+
+  // Startet einen neuen Ladevorgang (nicht sichtbar). Der eigentliche
+  // Ladeabschluss kommt asynchron über die bannerAdLoaded/-FailedToLoad
+  // Events (siehe wireBannerEvents) - das Promise von showBanner() selbst
+  // sagt nur aus, dass der native Aufruf angenommen wurde, nicht dass die
+  // Anzeige schon da ist.
+  function beginLoad() {
+    bannerState = 'loading';
+    return plugin()
+      .showBanner({ adId: BANNER_AD_UNIT_ID, adSize: BANNER_AD_SIZE, position: BANNER_POSITION, margin: 0 })
+      .then(function () { return plugin().hideBanner(); })
+      .catch(function (err) {
+        console.error('ads: showBanner fehlgeschlagen', err);
+        bannerState = 'failed';
+        resolveLoadWaiters(false);
+      });
+  }
+
+  // Lädt einen Banner im Voraus (versteckt), sobald mindestens ein
+  // Orts-Zeit-Wecker scharf ist - reduziert die Wartezeit beim tatsächlichen
+  // Auslösen, dessen genauer Zeitpunkt ja nicht vorhersehbar ist.
+  function preloadLocationRingingBanner() {
+    if (!isNative() || !plugin() || hasAdFreePurchase()) return Promise.resolve();
+    return init().then(function () {
+      if (!canRequestAds) return;
+      if (bannerState === 'loading' || bannerState === 'ready' || bannerState === 'visible') return;
+      preloadedAt = Date.now();
+      return beginLoad();
+    });
+  }
+
+  // Zeigt den Banner im Klingel-Bildschirm. Löst zu true auf, wenn eine
+  // Anzeige sichtbar ist, sonst false (Aufrufer zeigt dann die neutrale
+  // Fallback-Fläche statt eines leeren Bereichs).
   function showLocationRingingBanner() {
-    if (!isNative() || !plugin()) return Promise.resolve();
+    if (!isNative() || !plugin()) return Promise.resolve(false);
     // init() (insb. die DSGVO-Einwilligung) kann beliebig lange auf eine
     // Nutzerinteraktion warten. showToken sorgt dafuer, dass ein
     // zwischenzeitliches hideLocationRingingBanner() (Alarm bereits
@@ -62,27 +172,53 @@
     // Banner muenden laesst.
     var myToken = ++showToken;
     return init().then(function () {
-      if (myToken !== showToken || !canRequestAds || bannerVisible) return;
-      bannerVisible = true;
-      return plugin()
-        .showBanner({
-          adId: BANNER_AD_UNIT_ID,
-          adSize: 'MEDIUM_RECTANGLE',
-          position: 'TOP_CENTER',
-          margin: 0
-        })
-        .catch(function (err) {
-          console.error('ads: showBanner fehlgeschlagen', err);
-          bannerVisible = false;
-        });
+      if (myToken !== showToken || !canRequestAds || hasAdFreePurchase()) return false;
+
+      var preloadStillFresh = bannerState === 'ready' && Date.now() - preloadedAt < MAX_PRELOAD_AGE_MS;
+      if (preloadStillFresh) {
+        return resumeVisible(myToken);
+      }
+
+      if (bannerState === 'ready') {
+        // Vorgeladene Anzeige ist zu alt - verwerfen und frisch laden.
+        plugin().removeBanner().catch(function () {});
+        bannerState = 'idle';
+      }
+
+      if (bannerState === 'idle' || bannerState === 'failed') {
+        beginLoad();
+      }
+      // bannerState ist jetzt 'loading' (frisch gestartet oder von preload
+      // schon in Arbeit) - kurz auf Fertigstellung warten statt den
+      // Auslöse-Bildschirm unbegrenzt zu blockieren.
+      return waitForLoad(SHOW_WAIT_TIMEOUT_MS).then(function (loaded) {
+        if (myToken !== showToken) return false;
+        if (!loaded) return false;
+        return resumeVisible(myToken);
+      });
     });
+  }
+
+  function resumeVisible(myToken) {
+    bannerState = 'visible';
+    return plugin()
+      .resumeBanner()
+      .then(function () { return myToken === showToken; })
+      .catch(function (err) {
+        console.error('ads: resumeBanner fehlgeschlagen', err);
+        bannerState = 'failed';
+        return false;
+      });
   }
 
   function hideLocationRingingBanner() {
     showToken++;
-    if (!isNative() || !plugin() || !bannerVisible) return Promise.resolve();
-    bannerVisible = false;
-    return plugin().removeBanner().catch(function () {});
+    if (!isNative() || !plugin() || bannerState !== 'visible') return Promise.resolve();
+    // hideBanner (nicht removeBanner) haelt die geladene Anzeige fuer die
+    // Wiederverwendung beim naechsten Klingeln vor (siehe MAX_PRELOAD_AGE_MS).
+    bannerState = 'ready';
+    preloadedAt = Date.now();
+    return plugin().hideBanner().catch(function () {});
   }
 
   function canManagePrivacyOptions() {
@@ -99,6 +235,8 @@
   window.ads = {
     isNative: isNative,
     init: init,
+    hasAdFreePurchase: hasAdFreePurchase,
+    preloadLocationRingingBanner: preloadLocationRingingBanner,
     showLocationRingingBanner: showLocationRingingBanner,
     hideLocationRingingBanner: hideLocationRingingBanner,
     canManagePrivacyOptions: canManagePrivacyOptions,

@@ -202,21 +202,65 @@ Google-Test-IDs statt einem echten AdMob-Konto (siehe unten):
 **Was noch vor einem echten Store-Release fehlt** (nicht automatisierbar ohne
 Zugangsdaten, die hier nicht vorliegen):
 
-1. Ein echtes Google-AdMob-Konto anlegen und die App darin registrieren, um
-   eine echte App-ID und Ad-Unit-ID zu erhalten.
-2. `android/app/src/main/res/values/strings.xml` (`admob_app_id`) und
-   `BANNER_AD_UNIT_ID` in `www/js/ads.js` durch die echten IDs ersetzen – aktuell
-   stehen dort Googles offizielle, öffentlich dokumentierte TEST-IDs
-   (`ca-app-pub-3940256099942544...`). Diese zeigen zuverlässig als "Test Ad"
-   markierte Anzeigen, erzeugen aber keinerlei Umsatz.
-3. In der AdMob-Konsole eigene GDPR-/UMP-Consent-Nachrichten konfigurieren
+1. In der AdMob-Konsole eigene GDPR-/UMP-Consent-Nachrichten konfigurieren
    (ohne das zeigt `requestConsentInfo` ggf. gar kein Formular an).
-4. In der Play Console die Werbe-Angabe und den Data-Safety-Abschnitt
+2. In der Play Console die Werbe-Angabe und den Data-Safety-Abschnitt
    entsprechend ausfüllen (Standortdaten + Werbe-ID werden verwendet).
-5. Auf einem echten Gerät verifizieren, dass Banner tatsächlich geladen werden
+3. Auf einem echten Gerät verifizieren, dass Banner tatsächlich geladen werden
    und die Einwilligungs-UI (Formular + „Einwilligung verwalten“-Link) korrekt
    erscheint – ungetestet aus demselben Grund wie Phase 4 (kein Android-SDK/
    Gerät in dieser Umgebung).
+
+### Phase 6 Ergänzung: echte AdMob-IDs, Vorladen, Fallback
+
+Nachtrag zur ursprünglichen Phase-6-Umsetzung, mit echten Zugangsdaten aus
+einem eigenen AdMob-Konto:
+
+- **Echte IDs**: `admob_app_id` (`strings.xml`) und `BANNER_AD_UNIT_ID`
+  (`www/js/ads.js`) sind jetzt `ca-app-pub-8453553622026562~6853936501` bzw.
+  `ca-app-pub-8453553622026562/4356031602` statt Googles Test-IDs. Ab jetzt
+  gehen bei einem echten Gerätetest **echte** Anzeigenanfragen raus.
+- **Vorladen**: `js/ads.js` lädt den Banner (versteckt, per `showBanner()` +
+  sofortigem `hideBanner()`) bereits, sobald mindestens ein Orts-Zeit-Wecker
+  scharf geschaltet wird (`locationAlarms.js` → `syncTracking()`), nicht erst
+  beim tatsächlichen Klingeln – der genaue Auslöse-Zeitpunkt ist bei
+  Geofencing ja nicht vorhersehbar. Der Ladeabschluss wird über die
+  `bannerAdLoaded`/`bannerAdFailedToLoad`-Events verfolgt (nicht über das
+  Promise von `showBanner()` selbst, das nur die native Entgegennahme des
+  Aufrufs bestätigt, nicht den tatsächlichen Anzeigen-Erhalt).
+- **Wiederverwendung statt Neuladen**: Nach dem Schließen des
+  Klingel-Bildschirms wird der Banner nur versteckt (`hideBanner()`), nicht
+  zerstört (`removeBanner()`) – beim nächsten Klingeln reicht dann ein
+  schnelles `resumeBanner()` statt eines erneuten Ladevorgangs. Ist die
+  vorgeladene Anzeige älter als 30 Minuten (`MAX_PRELOAD_AGE_MS`), wird sie
+  verworfen und frisch geladen, damit keine stark veraltete Anzeige gezeigt
+  wird. **Dieser 30-Minuten-Wert ist eine eigene, nicht von Google
+  vorgegebene Abwägung** (Orts-Zeit-Wecker können ja auch Stunden nach dem
+  Scharfschalten auslösen) – vor Live-Schaltung gegen die aktuellen
+  AdMob-Richtlinien zur Anzeigen-Aktualität/Impression-Zählung prüfen.
+- **Fallback bei fehlender Anzeige**: Konnte keine Anzeige geladen werden
+  (z. B. keine Internetverbindung unterwegs – bei einem Orts-Zeit-Wecker ein
+  realistischer Fall), zeigt `locationRinging.js` statt eines leeren
+  Bereichs eine neutrale Marken-Fläche mit App-Namen
+  (`.location-ringing-ad.is-fallback-brand`). Wartezeit dafür ist auf 4
+  Sekunden begrenzt (`SHOW_WAIT_TIMEOUT_MS`), damit der Auslöse-Bildschirm
+  nicht wegen einer langsamen Verbindung blockiert.
+- **Abstand zum Swipe-Bereich**: `padding-top` von `.location-ringing-body`
+  bewusst auf 40px erhöht (Puffer zwischen Werbefläche und Titel/
+  Beschreibung), zusätzlich zum bereits bestehenden Abstand zum
+  Swipe-Bereich weiter unten – Vorkehrung gegen AdMob-Regeln zu
+  Mindestabständen zwischen Anzeigen und interaktiven Elementen. Eine
+  abschließende Prüfung ist nur auf einem echten Gerät sinnvoll möglich.
+- **IAP-Anknüpfungspunkt**: `ads.hasAdFreePurchase()` ist aktuell ein Stub
+  (liefert immer `false`), wird aber bereits vor jedem Laden/Anzeigen
+  geprüft. Für ein späteres „Werbefrei“-Feature reicht es, diese eine
+  Funktion durch einen echten Kauf-Check (z. B. Google Play Billing) zu
+  ersetzen.
+- **Getestet** wurde die neue Statemaschine (Vorladen → Wiederverwendung →
+  Verwerfen bei Alter, Fehlerfall → Fallback, Timeout-Pfad) mit einem
+  simulierten nativen AdMob-Plugin per Playwright – die eigentliche
+  Netzwerk-/Anzeigen-Auslieferung durch Google selbst ist damit nicht
+  abgedeckt und nur auf einem echten Gerät verifizierbar.
 
 **Phase 7 – Testing/Release** ist so weit umgesetzt, wie es ohne
 Android-SDK/Gerät und ohne echte Store-/AdMob-Zugangsdaten in dieser
