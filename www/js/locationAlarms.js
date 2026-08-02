@@ -10,11 +10,13 @@
   var commuteCheckbox, commuteOptions, commuteDayButtons, commuteStart, commuteEnd;
   var soundInputs, deleteBtn;
   var bgModal, bgAllowBtn, bgLaterBtn;
+  var fsiModal, fsiAllowBtn, fsiLaterBtn;
   var privacyOptionsLink;
   var picker = null;
   var editingId = null;
   var geoStarted = false;
   var BG_PROMPT_DISMISSED_KEY = 'wo.bgLocationPromptDismissed';
+  var FSI_PROMPT_DISMISSED_KEY = 'wo.fullScreenIntentPromptDismissed';
 
   function repeatSummary(alarm) {
     if (alarm.repeatType === 'once') return window.i18n.t('locationAlarm.repeatOnce');
@@ -86,7 +88,10 @@
     window.storage.locationAlarms.upsert(alarm);
     render();
     syncTracking();
-    if (enabled) maybePromptBackgroundPermission();
+    if (enabled) {
+      maybePromptBackgroundPermission();
+      maybePromptFullScreenIntentPermission();
+    }
   }
 
   function setActiveToggle(buttons, value, attr) {
@@ -203,7 +208,10 @@
     closeEditor();
     render();
     syncTracking();
-    if (alarm.enabled) maybePromptBackgroundPermission();
+    if (alarm.enabled) {
+      maybePromptBackgroundPermission();
+      maybePromptFullScreenIntentPermission();
+    }
   }
 
   function deleteAlarm() {
@@ -214,45 +222,49 @@
     syncTracking();
   }
 
-  function ringAlarmNow(alarm) {
+  function ringAlarmNow(alarm, options) {
     window.locationRinging.show(alarm, function () {
       // Zustand wurde in geoTrigger.js bereits aktualisiert (verbraucht/Periode);
       // hier nur die Kachel-Ansicht auffrischen.
       render();
-    });
+    }, options);
   }
 
-  function notifyAlarmInBackground(alarm) {
-    var id = window.Notify.nextId();
-    window.Notify.schedule([{
-      id: id,
-      title: alarm.title,
-      body: alarm.description || window.i18n.t('locationAlarm.notificationBody'),
-      channelId: window.Notify.channelFor(alarm.sound),
-      schedule: { at: new Date() },
-      extra: { type: 'locationAlarm', alarmId: alarm.id }
-    }]);
-  }
-
-  function handleTrigger(alarm) {
-    // Im Vordergrund direkt das Overlay zeigen (kein Umweg über eine
-    // Benachrichtigung noetig). Im Hintergrund/bei geschlossener App gibt es
-    // keine sichtbare Seite fuer ein Overlay - dort uebernimmt eine lokale
-    // Benachrichtigung, deren Antippen (oder Eintreffen im Vordergrund) ueber
-    // denselben Notify.onFire-Mechanismus wie Wecker/Timer das Overlay oeffnet.
+  // Loest den nativen Vollbild-Alarm aus (setFullScreenIntent + eigener
+  // Ton/Vibration-Dienst, siehe LocationAlarmNotifier/AlarmRingService) -
+  // ersetzt die vorherige einfache Benachrichtigung. Nur erreichbar, nachdem
+  // die vollstaendige Ausloese-Pruefung (Wiederholungstyp, Pendel-
+  // Zeitfenster) in geoTrigger.js bereits positiv war.
+  function handleTrigger(alarm, locationId, enter) {
     if (document.visibilityState === 'visible') {
+      // App ist gerade sichtbar geoeffnet - direkt das Overlay zeigen, kein
+      // Umweg ueber eine Benachrichtigung noetig.
       ringAlarmNow(alarm);
     } else {
-      notifyAlarmInBackground(alarm);
+      window.locationAlarmBridge.ringFullScreenAlarm(alarm, locationId, enter);
     }
   }
 
-  function handleNotificationFire(evt) {
-    var extra = evt.notification && evt.notification.extra;
-    if (!extra || extra.type !== 'locationAlarm') return;
-    var alarm = window.storage.locationAlarms.getAll().find(function (a) { return a.id === extra.alarmId; });
+  // Wird beim App-Start (kalter Start ueber den Vollbild-Intent) bzw. bei
+  // einem erneuten Intent waehrend die App schon lief (onNewIntent) mit den
+  // Daten aufgerufen, die LocationAlarmNotifier der Benachrichtigung
+  // mitgegeben hat - zeigt das Overlay mit nativ uebernommenem Ton/Vibration.
+  function ringAlarmFromNativePending(pending) {
+    var alarms = window.storage.locationAlarms.getAll();
+    var alarm = alarms.find(function (a) { return a.id === pending.alarmId; });
     if (!alarm) return;
-    ringAlarmNow(alarm);
+
+    // Nachtraegliche Zustands-Buchhaltung, die beim urspruenglichen
+    // Ausloesen nicht laufen konnte, weil der App-Prozess zu dem Zeitpunkt
+    // noch nicht (wieder) lief - siehe README zu den Grenzen des rein
+    // nativen Ausloese-Pfads.
+    var loc = (alarm.locations || []).find(function (l) { return l.id === pending.locationId; });
+    if (loc) loc.wasInside = pending.enter !== false;
+    if (alarm.repeatType === 'once') alarm.consumed = true;
+    alarm.lastTriggeredAt = Date.now();
+    window.storage.locationAlarms.save(alarms);
+
+    ringAlarmNow(alarm, { nativeAudio: true });
   }
 
   function maybePromptBackgroundPermission() {
@@ -279,6 +291,34 @@
         try { localStorage.setItem(BG_PROMPT_DISMISSED_KEY, '1'); } catch (e) {}
       }
     });
+  }
+
+  // Auf Android 14+ muss der Nutzer USE_FULL_SCREEN_INTENT zusaetzlich in
+  // den Systemeinstellungen freigeben (die Berechtigung selbst wird bei der
+  // Installation automatisch erteilt, kann vom Nutzer/System aber wieder
+  // entzogen werden) - ohne diese Freigabe wuerde der Orts-Zeit-Wecker bei
+  // gesperrtem Bildschirm nur als normale Benachrichtigung erscheinen statt
+  // als Vollbild-Alarm.
+  function maybePromptFullScreenIntentPermission() {
+    if (!window.locationAlarmBridge.isNative()) return;
+    var dismissed = false;
+    try { dismissed = localStorage.getItem(FSI_PROMPT_DISMISSED_KEY) === '1'; } catch (e) {}
+    if (dismissed) return;
+
+    window.locationAlarmBridge.canUseFullScreenIntent().then(function (allowed) {
+      if (allowed) return;
+      fsiModal.classList.add('is-visible');
+    });
+  }
+
+  function dismissFullScreenIntentPrompt() {
+    try { localStorage.setItem(FSI_PROMPT_DISMISSED_KEY, '1'); } catch (e) {}
+    fsiModal.classList.remove('is-visible');
+  }
+
+  function openFullScreenIntentSettingsFromModal() {
+    window.locationAlarmBridge.openFullScreenIntentSettings();
+    fsiModal.classList.remove('is-visible');
   }
 
   function syncTracking() {
@@ -354,6 +394,13 @@
     bgLaterBtn.addEventListener('click', dismissBackgroundPrompt);
     bgModal.querySelector('.modal-backdrop').addEventListener('click', dismissBackgroundPrompt);
 
+    fsiModal = document.getElementById('fullscreen-intent-permission-modal');
+    fsiAllowBtn = document.getElementById('fullscreen-intent-permission-allow');
+    fsiLaterBtn = document.getElementById('fullscreen-intent-permission-later');
+    fsiAllowBtn.addEventListener('click', openFullScreenIntentSettingsFromModal);
+    fsiLaterBtn.addEventListener('click', dismissFullScreenIntentPrompt);
+    fsiModal.querySelector('.modal-backdrop').addEventListener('click', dismissFullScreenIntentPrompt);
+
     privacyOptionsLink = document.getElementById('privacy-options-link');
     privacyOptionsLink.addEventListener('click', function () { window.ads.openPrivacyOptions(); });
     window.ads.init().then(function () {
@@ -381,7 +428,18 @@
     commuteCheckbox.addEventListener('change', updateCommuteVisibility);
 
     window.geoTrigger.onTrigger(handleTrigger);
-    window.Notify.onFire(handleNotificationFire);
+
+    // Alarm, der ueber einen Vollbild-Intent ausgeloest wurde: entweder
+    // stand er schon vor dem Laden dieses Plugins bereit (kalter Start -
+    // consumePendingAlarm), oder er trifft waehrend die App bereits laeuft
+    // erneut ein (App im Hintergrund offen, Sperrbildschirm zeigt den
+    // Alarm - onNewIntent in MainActivity.java, siehe pendingAlarm-Event).
+    window.locationAlarmBridge.consumePendingAlarm().then(function (pending) {
+      if (pending) ringAlarmFromNativePending(pending);
+    });
+    window.locationAlarmBridge.onPendingAlarm(function (pending) {
+      ringAlarmFromNativePending(pending);
+    });
 
     render();
     syncTracking();

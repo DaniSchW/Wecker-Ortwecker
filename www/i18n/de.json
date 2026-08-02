@@ -98,6 +98,11 @@
   "bgPermission.later": "Später",
   "bgPermission.allow": "Berechtigung erteilen",
 
+  "fsiPermission.title": "Vollbild-Alarm erlauben",
+  "fsiPermission.body": "Damit dieser Orts-Zeit-Wecker bei gesperrtem Bildschirm als Vollbild-Alarm erscheint (statt nur als normale Benachrichtigung), muss diese Berechtigung zusätzlich in den Systemeinstellungen freigegeben werden.",
+  "fsiPermission.later": "Später",
+  "fsiPermission.allow": "Einstellungen öffnen",
+
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stopp",
   "stopwatch.reset": "Reset",

@@ -80,7 +80,21 @@
                     identifier: makeIdentifier(alarm.id, loc.id),
                     latitude: loc.lat,
                     longitude: loc.lng,
-                    radius: alarm.radius || 150
+                    radius: alarm.radius || 150,
+                    // Wird vom Plugin pro Region gespeichert und bei einer
+                    // Transition unverändert mitgeliefert (siehe
+                    // GeofenceStore.buildTransitionData im Plugin) - so
+                    // kennt die native Vollbild-Alarm-Bridge (siehe
+                    // LocationAlarmNotifier) Titel/Beschreibung/Ton-
+                    // Einstellung auch dann, wenn der App-Prozess beim
+                    // Auslösen bereits beendet war und kein JS läuft.
+                    payload: {
+                      alarmId: alarm.id,
+                      locationId: loc.id,
+                      title: alarm.title || '',
+                      description: alarm.description || '',
+                      sound: alarm.sound || 'both'
+                    }
                   })
                   .catch(function (err) {
                     console.error('backgroundGeofence: addGeofence fehlgeschlagen', alarm.id, loc.id, err);

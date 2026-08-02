@@ -4,6 +4,12 @@
   var overlay, adSpace, titleEl, descriptionEl, swipeTrack, swipeHandle, swipeHint;
   var activeAlarm = null;
   var onStopCallback = null;
+  // true, wenn Ton/Vibration für die aktuell klingelnde Anzeige vom nativen
+  // AlarmRingService übernommen werden (Alarm über den Vollbild-Intent-
+  // Mechanismus ausgelöst) - dann darf alarmSound.js NICHT zusätzlich selbst
+  // Ton/Vibration starten (Doppel-Ton) und stop() muss stattdessen den
+  // nativen Dienst beenden.
+  var nativeAudioActive = false;
 
   function resetSwipe() {
     swipeHandle.style.transform = 'translateX(0)';
@@ -56,9 +62,10 @@
     adSpace.classList.toggle('is-fallback-brand', active);
   }
 
-  function show(alarm, stopCallback) {
+  function show(alarm, stopCallback, options) {
     activeAlarm = alarm;
     onStopCallback = stopCallback;
+    nativeAudioActive = !!(options && options.nativeAudio);
 
     titleEl.textContent = alarm.title || window.i18n.t('alarm.defaultRingingTitle');
     descriptionEl.textContent = alarm.description || '';
@@ -69,7 +76,11 @@
     overlay.classList.add('is-visible');
     document.body.classList.add('is-ringing');
 
-    window.alarmSound.start(alarm.sound || 'both');
+    // Läuft der native AlarmRingService bereits (Vollbild-Alarm-Pfad, siehe
+    // locationAlarms.js), übernimmt der Ton/Vibration - die Web-Audio-
+    // Umsetzung ist nur für den direkten Vordergrund-Pfad zuständig (App war
+    // beim Auslösen bereits sichtbar geöffnet).
+    if (!nativeAudioActive) window.alarmSound.start(alarm.sound || 'both');
     if (window.ads.isNative()) {
       // Native Anzeige liegt als eigenständige Systemansicht ÜBER der
       // WebView und wird nicht über adSpace ins DOM eingehängt - adSpace
@@ -85,7 +96,12 @@
   }
 
   function stop() {
-    window.alarmSound.stop();
+    if (nativeAudioActive) {
+      window.locationAlarmBridge.stopAlarmSound();
+    } else {
+      window.alarmSound.stop();
+    }
+    nativeAudioActive = false;
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
     window.ads.hideRingingBanner();

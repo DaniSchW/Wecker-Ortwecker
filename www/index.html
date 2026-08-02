@@ -388,6 +388,18 @@
     </div>
   </div>
 
+  <div id="fullscreen-intent-permission-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-sheet">
+      <h2 data-i18n="fsiPermission.title">Vollbild-Alarm erlauben</h2>
+      <p class="field-hint" data-i18n="fsiPermission.body">Damit dieser Orts-Zeit-Wecker bei gesperrtem Bildschirm als Vollbild-Alarm erscheint (statt nur als normale Benachrichtigung), muss diese Berechtigung zusätzlich in den Systemeinstellungen freigegeben werden.</p>
+      <div class="modal-actions tile-actions">
+        <button type="button" id="fullscreen-intent-permission-later" class="btn secondary" data-i18n="fsiPermission.later">Später</button>
+        <button type="button" id="fullscreen-intent-permission-allow" class="btn primary" data-i18n="fsiPermission.allow">Einstellungen öffnen</button>
+      </div>
+    </div>
+  </div>
+
   <div id="settings-modal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-sheet">
@@ -424,6 +436,7 @@
   <script src="js/tabata.js"></script>
   <script src="js/map.js"></script>
   <script src="js/backgroundGeofence.js"></script>
+  <script src="js/locationAlarmBridge.js"></script>
   <script src="js/geoTrigger.js"></script>
   <script src="js/locationRinging.js"></script>
   <script src="js/locationAlarms.js"></script>

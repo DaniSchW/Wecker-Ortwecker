@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
+        android:name=".WeckerOrtsweckerApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -28,6 +29,15 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Ergänzung: Vollbild-Alarm für den Orts-Zeit-Wecker. Ton/Vibration
+             laufen unabhängig vom Benachrichtigungskanal in einem eigenen
+             Foreground-Service (siehe AlarmRingService.java), bis der Nutzer
+             im Klingel-Bildschirm wischt. -->
+        <service
+            android:name=".AlarmRingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
         <!-- Phase 6, @capacitor-community/admob. admob_app_id (strings.xml) ist
              aktuell Googles offizielle TEST-App-ID - vor Store-Release durch die
              echte AdMob-App-ID ersetzen (siehe README). -->
@@ -48,4 +58,17 @@
          WAKE_LOCK und RECEIVE_BOOT_COMPLETED bringt das Plugin über sein eigenes
          AndroidManifest.xml automatisch mit. -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Vollbild-Alarm-Ergänzung für den Orts-Zeit-Wecker-Klingel-Bildschirm.
+         USE_FULL_SCREEN_INTENT ist eine "normal" eingestufte Berechtigung und
+         wird bei der Installation automatisch erteilt - AUSSER auf Android 14
+         (API 34)+, wo der Nutzer sie zusätzlich manuell in den
+         Systemeinstellungen freigeben muss (siehe LocationAlarmBridgePlugin.
+         canUseFullScreenIntent()/openFullScreenIntentSettings() und den
+         zugehörigen Hinweis-Dialog in locationAlarms.js). POST_NOTIFICATIONS
+         und VIBRATE bringt @capacitor/local-notifications bzw.
+         @capacitor/haptics bereits über ihr eigenes Manifest mit. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 </manifest>

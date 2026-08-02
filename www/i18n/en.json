@@ -98,6 +98,11 @@
   "bgPermission.later": "Later",
   "bgPermission.allow": "Grant permission",
 
+  "fsiPermission.title": "Allow full-screen alarm",
+  "fsiPermission.body": "For this location alarm to appear as a full-screen alarm on a locked screen (instead of just a regular notification), this permission must additionally be granted in the system settings.",
+  "fsiPermission.later": "Later",
+  "fsiPermission.allow": "Open settings",
+
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stop",
   "stopwatch.reset": "Reset",

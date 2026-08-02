@@ -134,19 +134,25 @@
         if (!alarm.enabled || !alarm.locations || !alarm.locations.length) continue;
 
         var fired = false;
+        var firedLocationId = null;
+        var firedInside = null;
 
         alarm.locations.forEach(function (loc) {
           var distance = window.locationPicker.haversineMeters(lat, lng, loc.lat, loc.lng);
           var inside = distance <= (alarm.radius || 150);
           var wasInsideBefore = loc.wasInside;
-          if (applyLocationState(alarm, loc, inside, now) && !fired) fired = true;
+          if (applyLocationState(alarm, loc, inside, now) && !fired) {
+            fired = true;
+            firedLocationId = loc.id;
+            firedInside = inside;
+          }
           if (loc.wasInside !== wasInsideBefore) changed = true;
         });
 
         if (fired) {
           markTriggered(alarm, now);
           changed = true;
-          triggerCallback(alarm);
+          triggerCallback(alarm, firedLocationId, firedInside);
           break; // ein Alarm pro Positions-Update ist genug; changed=true speichert unten die ganze Liste
         }
       }
@@ -180,7 +186,7 @@
     if (fired) markTriggered(alarm, now);
 
     window.storage.locationAlarms.save(alarms);
-    if (fired) triggerCallback(alarm);
+    if (fired) triggerCallback(alarm, locationId, isEnter);
   }
 
   function start() {
