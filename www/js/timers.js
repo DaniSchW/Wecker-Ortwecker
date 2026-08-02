@@ -56,7 +56,7 @@
         '</div>' +
         '<div class="timer-tile-time">' + (timer.state === 'done' ? window.i18n.t('timer.done') : formatRemaining(remaining)) + '</div>' +
         '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + Math.min(100, Math.max(0, progress * 100)) + '%"></div></div>' +
-        '<div class="timer-tile-controls">' +
+        '<div class="timer-tile-controls tile-actions">' +
           (timer.state === 'done'
             ? '<button type="button" class="btn timer-ack">' + window.i18n.t('timer.ack') + '</button>'
             : '<button type="button" class="btn timer-toggle">' + window.i18n.t(timer.state === 'running' ? 'timer.pause' : 'timer.start') + '</button>' +

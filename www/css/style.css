@@ -574,6 +574,36 @@ body {
   margin-right: auto;
 }
 
+/* Responsive Action-Button-Gruppen (Kachel-Controls, Modal-Aktionen): auf
+   breiten Bildschirmen nebeneinander, auf schmalen automatisch gestapelt
+   statt abgeschnitten/überlaufend. Kein overflow:hidden hier - flex-wrap
+   übernimmt den Zeilenumbruch. */
+.tile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tile-actions button {
+  flex: 1 1 auto;
+  min-width: 100px;
+}
+
+@media (max-width: 360px) {
+  .tile-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Beim Stapeln landet die destruktive Aktion (Löschen) unten statt oben,
+     damit sie nicht versehentlich als erster Button getroffen wird. */
+  .tile-actions .btn.danger {
+    order: 1;
+    margin-right: 0;
+  }
+}
+
 /* Alarm ringing overlay */
 .ringing-overlay {
   position: fixed;

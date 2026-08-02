@@ -115,7 +115,7 @@
           '<button type="button" class="icon-btn tabata-delete" aria-label="' + window.i18n.t('timer.delete') + '">✕</button>' +
         '</div>' +
         '<div class="location-tile-meta">' + formatSummary(preset) + '</div>' +
-        '<div class="timer-tile-controls">' +
+        '<div class="timer-tile-controls tile-actions">' +
           '<button type="button" class="btn primary tabata-start">' + window.i18n.t('stopwatch.start') + '</button>' +
         '</div>';
 
