@@ -89,7 +89,7 @@
   "locationAlarm.toggle": "Orts-Zeit-Wecker ein-/ausschalten",
   "locationAlarm.locationSingular": "Ort",
   "locationAlarm.locationPlural": "Orte",
-  "locationAlarm.adPlaceholder": "Werbefläche (Platzhalter)",
+  "ringing.adPlaceholder": "Werbefläche (Platzhalter)",
   "locationAlarm.privacyOptions": "Werbe-Einwilligung verwalten",
   "locationAlarm.notificationBody": "Orts-Zeit-Wecker ausgelöst",
 

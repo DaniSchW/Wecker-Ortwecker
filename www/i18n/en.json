@@ -89,7 +89,7 @@
   "locationAlarm.toggle": "Toggle location alarm on/off",
   "locationAlarm.locationSingular": "location",
   "locationAlarm.locationPlural": "locations",
-  "locationAlarm.adPlaceholder": "Ad space (placeholder)",
+  "ringing.adPlaceholder": "Ad space (placeholder)",
   "locationAlarm.privacyOptions": "Manage ad consent",
   "locationAlarm.notificationBody": "Location alarm triggered",
 

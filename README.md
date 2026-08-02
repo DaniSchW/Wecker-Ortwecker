@@ -533,6 +533,44 @@ Nachtrag zur Werbefläche im Orts-Zeit-Wecker-Klingel-Bildschirm
   50%-Höhe in beiden Zuständen automatisch identisch – per Test
   bestätigt.
 
+### Werbung jetzt auch im Standard-Wecker-Klingel-Bildschirm
+
+**Bewusste Abkehr von der ursprünglichen Phase-6-Vorgabe**: Bis hierhin
+war Werbung explizit auf den Orts-Zeit-Wecker-Auslöse-Bildschirm
+beschränkt ("keine Werbung in Standard-Wecker/Stoppuhr/Timer/Tabata/...").
+Auf ausdrücklichen Wunsch zeigt jetzt auch der Klingel-Bildschirm des
+normalen Weckers (`#ringing-overlay`, `www/js/ringing.js`) dieselbe
+Werbefläche nach demselben Muster wie der Orts-Zeit-Wecker – Stoppuhr,
+Timer, Tabata und alle übrigen Bildschirme bleiben weiterhin werbefrei.
+
+- **ads.js generalisiert**: `preloadLocationRingingBanner()` /
+  `showLocationRingingBanner()` / `hideLocationRingingBanner()` in
+  `preloadRingingBanner()` / `showRingingBanner()` / `hideRingingBanner()`
+  umbenannt – es gibt weiterhin nur eine einzige native Banner-Instanz für
+  die ganze App (Statemaschine unverändert), die sich jetzt beide
+  Klingel-Bildschirme teilen. Das ist unkritisch, da beide Bildschirme
+  sich gegenseitig ausschließen (immer nur einer sichtbar).
+- **ringing.js** erhielt dieselbe Lade-/Fallback-Logik wie
+  `locationRinging.js` (`setAdFallback()`, `showRingingBanner()` beim
+  Zeigen, `hideRingingBanner()` beim Schließen/Schlummern).
+- **Vorladen für Standard-Wecker**: `alarms.js` bekam eine neue
+  `maybePreloadRingingBanner()`-Funktion (aufgerufen nach jedem
+  Ein-/Ausschalten, Speichern, Löschen und beim Start), die genau wie bei
+  den Orts-Zeit-Weckern lädt, sobald mindestens ein Wecker scharf ist.
+- **CSS/HTML vereinheitlicht**: `.location-ringing-ad`/
+  `.location-ringing-body` sind jetzt generisch `.ringing-ad`/
+  `.ringing-body` (von beiden Klingel-Bildschirmen genutzt); der
+  Standard-Wecker-Bildschirm wurde auf dieselbe Grundstruktur umgestellt
+  (Werbefläche fest oben auf 50%, restlicher Inhalt darunter, Swipe-Bereich
+  als eigenes Element ganz unten) statt der vorherigen freien
+  `justify-content: space-between`-Verteilung über den ganzen Bildschirm.
+  Der i18n-Schlüssel `locationAlarm.adPlaceholder` (Web-Vorschau-Text) heißt
+  jetzt `ringing.adPlaceholder`.
+- **Getestet** per Playwright (gemocktes AdMob-Plugin): 50%-Höhe in
+  geladenem und Fallback-Zustand für beide Klingel-Bildschirme, Vorladen
+  bei aktivem Standard-Wecker, Web-Vorschau-Platzhaltertext für beide
+  Bildschirme, vollständige Regressionssuite weiterhin ohne Fehler.
+
 ## Entwicklung
 
 ```bash

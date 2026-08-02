@@ -68,6 +68,15 @@
     return div.innerHTML;
   }
 
+  // Werbebanner im Voraus laden, solange mindestens ein Wecker scharf ist -
+  // derselbe Vorlade-Mechanismus wie bei den Orts-Zeit-Weckern (siehe
+  // locationAlarms.js/ads.js), damit der Klingel-Bildschirm die Anzeige
+  // moeglichst sofort zeigen kann statt erst beim Klingeln zu laden.
+  function maybePreloadRingingBanner() {
+    var hasEnabled = window.storage.alarms.getAll().some(function (a) { return a.enabled; });
+    if (hasEnabled) window.ads.preloadRingingBanner();
+  }
+
   function toggleEnabled(id, enabled) {
     var alarms = window.storage.alarms.getAll();
     var alarm = alarms.find(function (a) { return a.id === id; });
@@ -81,6 +90,7 @@
       cancelSnooze(alarm);
     }
     render();
+    maybePreloadRingingBanner();
   }
 
   function cancelSnooze(alarm) {
@@ -206,6 +216,7 @@
     scheduleAlarm(alarm);
     closeEditor();
     render();
+    maybePreloadRingingBanner();
   }
 
   function deleteAlarm() {
@@ -218,6 +229,7 @@
     window.storage.alarms.remove(editingId);
     closeEditor();
     render();
+    maybePreloadRingingBanner();
   }
 
   function handleSnooze(alarm) {
@@ -279,6 +291,7 @@
 
     window.Notify.onFire(handleFire);
     render();
+    maybePreloadRingingBanner();
   }
 
   function rescheduleAll() {
@@ -286,6 +299,7 @@
       if (alarm.enabled) scheduleAlarm(alarm);
     });
     render();
+    maybePreloadRingingBanner();
   }
 
   window.alarmsTab = { init: init, render: render, rescheduleAll: rescheduleAll };

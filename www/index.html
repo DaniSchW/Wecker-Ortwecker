@@ -250,11 +250,14 @@
   </div>
 
   <div id="ringing-overlay" class="ringing-overlay">
-    <div class="ringing-content">
-      <div id="ringing-time" class="ringing-time">00:00</div>
-      <div id="ringing-title" class="ringing-title">Wecker</div>
+    <div id="ringing-ad" class="ringing-ad"></div>
+    <div class="ringing-body">
+      <div class="ringing-content">
+        <div id="ringing-time" class="ringing-time">00:00</div>
+        <div id="ringing-title" class="ringing-title">Wecker</div>
+      </div>
+      <button type="button" id="ringing-snooze-btn" class="btn secondary ringing-snooze-btn" data-i18n="alarm.snooze">Schlummern</button>
     </div>
-    <button type="button" id="ringing-snooze-btn" class="btn secondary ringing-snooze-btn" data-i18n="alarm.snooze">Schlummern</button>
     <div class="ringing-swipe">
       <div id="ringing-swipe-hint" class="ringing-swipe-hint" data-i18n="alarm.swipeToStop">Zum Stoppen wischen</div>
       <div id="ringing-swipe-track" class="ringing-swipe-track">
@@ -359,9 +362,9 @@
     </form>
   </div>
 
-  <div id="location-ringing-overlay" class="ringing-overlay location-ringing-overlay">
-    <div id="location-ringing-ad" class="location-ringing-ad"></div>
-    <div class="location-ringing-body">
+  <div id="location-ringing-overlay" class="ringing-overlay">
+    <div id="location-ringing-ad" class="ringing-ad"></div>
+    <div class="ringing-body">
       <div id="location-ringing-title" class="ringing-title location-ringing-title">Orts-Zeit-Wecker</div>
       <div id="location-ringing-description" class="location-ringing-description"></div>
     </div>

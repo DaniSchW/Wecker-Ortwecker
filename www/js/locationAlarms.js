@@ -306,7 +306,7 @@
     // Werbebanner im Voraus laden, solange mindestens ein Orts-Zeit-Wecker
     // scharf ist - der genaue Ausloese-Zeitpunkt ist ja nicht vorhersehbar,
     // daher hier statt erst beim tatsaechlichen Klingeln (siehe ads.js).
-    if (hasEnabled) window.ads.preloadLocationRingingBanner();
+    if (hasEnabled) window.ads.preloadRingingBanner();
   }
 
   function buildCommuteWeekdayPicker(container) {

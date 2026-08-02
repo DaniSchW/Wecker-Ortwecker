@@ -76,7 +76,7 @@
       // bleibt nur die reservierte Freifläche (siehe CSS) und zeigt die
       // Fallback-Fläche, falls keine Anzeige geladen werden konnte.
       setAdFallback(false);
-      window.ads.showLocationRingingBanner().then(function (shown) {
+      window.ads.showRingingBanner().then(function (shown) {
         // Nur noch relevant, wenn der Bildschirm nicht laengst wieder
         // geschlossen wurde (sehr schnelles Wegwischen).
         if (overlay.classList.contains('is-visible')) setAdFallback(!shown);
@@ -88,7 +88,7 @@
     window.alarmSound.stop();
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
-    window.ads.hideLocationRingingBanner();
+    window.ads.hideRingingBanner();
     setAdFallback(false);
     var alarm = activeAlarm;
     var cb = onStopCallback;
@@ -101,7 +101,7 @@
     overlay = document.getElementById('location-ringing-overlay');
     adSpace = document.getElementById('location-ringing-ad');
     if (adSpace && !window.ads.isNative()) {
-      adSpace.textContent = window.i18n.t('locationAlarm.adPlaceholder');
+      adSpace.textContent = window.i18n.t('ringing.adPlaceholder');
     }
     titleEl = document.getElementById('location-ringing-title');
     descriptionEl = document.getElementById('location-ringing-description');

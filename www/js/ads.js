@@ -19,8 +19,9 @@
   // ADAPTIVE_BANNER (i. d. R. 50-100dp) noch das vorher genutzte
   // MEDIUM_RECTANGLE (fix 250dp) füllen also tatsächlich 50% der
   // Bildschirmhöhe aus. Die per CSS exakt auf 50% fixierte Fläche
-  // (.location-ringing-ad, www/css/style.css) ist daher bewusst eine obere
-  // Begrenzung/reservierte Fläche, in der die Anzeige oben verankert wird -
+  // (.ringing-ad, www/css/style.css - gilt für beide Klingel-Bildschirme)
+  // ist daher bewusst eine obere Begrenzung/reservierte Fläche, in der die
+  // Anzeige oben verankert wird -
   // nicht die tatsächliche Anzeigengröße selbst. Eine Anzeige, die
   // buchstäblich 50% Bildschirmhöhe ausfüllt, wäre technisch kein
   // AdMob-Banner mehr, sondern ein anderer Anzeigentyp (z. B. Interstitial)
@@ -38,9 +39,9 @@
   // README, Abschnitt "Phase 6 Ergänzung").
   var MAX_PRELOAD_AGE_MS = 30 * 60 * 1000;
 
-  // Wie lange showLocationRingingBanner() maximal auf eine noch laufende
-  // Ladung wartet, bevor auf die neutrale Fallback-Anzeige (siehe
-  // locationRinging.js) ausgewichen wird, damit der Auslöse-Bildschirm nicht
+  // Wie lange showRingingBanner() maximal auf eine noch laufende Ladung
+  // wartet, bevor auf die neutrale Fallback-Anzeige (siehe ringing.js/
+  // locationRinging.js) ausgewichen wird, damit der Klingel-Bildschirm nicht
   // wegen einer langsamen/fehlenden Internetverbindung blockiert.
   var SHOW_WAIT_TIMEOUT_MS = 4000;
 
@@ -162,10 +163,16 @@
       });
   }
 
-  // Lädt einen Banner im Voraus (versteckt), sobald mindestens ein
-  // Orts-Zeit-Wecker scharf ist - reduziert die Wartezeit beim tatsächlichen
-  // Auslösen, dessen genauer Zeitpunkt ja nicht vorhersehbar ist.
-  function preloadLocationRingingBanner() {
+  // Lädt einen Banner im Voraus (versteckt), sobald mindestens ein Wecker
+  // oder Orts-Zeit-Wecker scharf ist - reduziert die Wartezeit beim
+  // tatsächlichen Auslösen. Bei Orts-Zeit-Weckern ist der Zeitpunkt ja nicht
+  // vorhersehbar (Geofencing); bei Standard-Weckern wäre er zwar bekannt,
+  // aber derselbe, bereits vorhandene Vorlade-Mechanismus wird hier bewusst
+  // wiederverwendet statt einen zweiten, zeitgesteuerten einzuführen - ein
+  // einziger geladener/wiederverwendbarer Banner reicht für beide Screens,
+  // da immer nur einer der beiden Klingel-Bildschirme gleichzeitig sichtbar
+  // sein kann.
+  function preloadRingingBanner() {
     if (!isNative() || !plugin() || hasAdFreePurchase()) return Promise.resolve();
     return init().then(function () {
       if (!canRequestAds) return;
@@ -175,16 +182,17 @@
     });
   }
 
-  // Zeigt den Banner im Klingel-Bildschirm. Löst zu true auf, wenn eine
-  // Anzeige sichtbar ist, sonst false (Aufrufer zeigt dann die neutrale
-  // Fallback-Fläche statt eines leeren Bereichs).
-  function showLocationRingingBanner() {
+  // Zeigt den Banner im Klingel-Bildschirm (Standard-Wecker oder
+  // Orts-Zeit-Wecker). Löst zu true auf, wenn eine Anzeige sichtbar ist,
+  // sonst false (Aufrufer zeigt dann die neutrale Fallback-Fläche statt
+  // eines leeren Bereichs).
+  function showRingingBanner() {
     if (!isNative() || !plugin()) return Promise.resolve(false);
     // init() (insb. die DSGVO-Einwilligung) kann beliebig lange auf eine
     // Nutzerinteraktion warten. showToken sorgt dafuer, dass ein
-    // zwischenzeitliches hideLocationRingingBanner() (Alarm bereits
-    // weggewischt) diese verspaetete Anfrage nicht mehr in einen sichtbaren
-    // Banner muenden laesst.
+    // zwischenzeitliches hideRingingBanner() (Alarm bereits weggewischt)
+    // diese verspaetete Anfrage nicht mehr in einen sichtbaren Banner
+    // muenden laesst.
     var myToken = ++showToken;
     return init().then(function () {
       if (myToken !== showToken || !canRequestAds || hasAdFreePurchase()) return false;
@@ -226,7 +234,7 @@
       });
   }
 
-  function hideLocationRingingBanner() {
+  function hideRingingBanner() {
     showToken++;
     if (!isNative() || !plugin() || bannerState !== 'visible') return Promise.resolve();
     // hideBanner (nicht removeBanner) haelt die geladene Anzeige fuer die
@@ -251,9 +259,9 @@
     isNative: isNative,
     init: init,
     hasAdFreePurchase: hasAdFreePurchase,
-    preloadLocationRingingBanner: preloadLocationRingingBanner,
-    showLocationRingingBanner: showLocationRingingBanner,
-    hideLocationRingingBanner: hideLocationRingingBanner,
+    preloadRingingBanner: preloadRingingBanner,
+    showRingingBanner: showRingingBanner,
+    hideRingingBanner: hideRingingBanner,
     canManagePrivacyOptions: canManagePrivacyOptions,
     openPrivacyOptions: openPrivacyOptions
   };

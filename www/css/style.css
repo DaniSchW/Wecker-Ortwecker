@@ -626,16 +626,18 @@ body {
   }
 }
 
-/* Alarm ringing overlay */
+/* Alarm ringing overlay (Standard-Wecker UND Orts-Zeit-Wecker teilen sich
+   dieses Grundlayout: oben reservierte Werbefläche über .ringing-ad, s.u.,
+   darunter die eigentlichen Inhalte). */
 .ringing-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: none;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   background: var(--color-bg);
-  padding: 48px 24px calc(32px + var(--safe-bottom));
+  padding: 0;
 }
 
 .ringing-overlay.is-visible {
@@ -643,7 +645,6 @@ body {
 }
 
 .ringing-content {
-  margin-top: 15vh;
   text-align: center;
 }
 
@@ -667,7 +668,9 @@ body {
 }
 
 .ringing-swipe {
+  flex: 0 0 auto;
   text-align: center;
+  padding: 0 24px calc(24px + var(--safe-bottom));
 }
 
 .ringing-swipe-hint {
@@ -972,16 +975,12 @@ body.is-ringing .bottom-nav {
   padding: 4px 2px;
 }
 
-/* Orts-Zeit-Wecker Auslöse-Bildschirm mit Werbefläche */
-.location-ringing-overlay {
-  padding: 0;
-  justify-content: flex-start;
-}
-
-.location-ringing-ad {
-  /* Exakt 50% der verfügbaren Bildschirmhöhe (.location-ringing-overlay
-     füllt per position:fixed;inset:0 die gesamte Bildschirmhöhe, davon die
-     Hälfte für die Anzeige) - fest, ob eine Anzeige geladen ist oder die
+/* Alarm-Auslöse-Bildschirme mit Werbefläche (Standard-Wecker UND
+   Orts-Zeit-Wecker - beide teilen sich .ringing-ad/.ringing-body). */
+.ringing-ad {
+  /* Exakt 50% der verfügbaren Bildschirmhöhe (.ringing-overlay füllt per
+     position:fixed;inset:0 die gesamte Bildschirmhöhe, davon die Hälfte für
+     die Anzeige) - fest, ob eine Anzeige geladen ist oder die
      Fallback-Fläche gezeigt wird, damit sich beim Wechsel zwischen beiden
      Zuständen nichts im Layout verschiebt. flex-grow/-shrink bewusst auf 0
      UND zusätzlich min-height:0 + overflow:hidden gesetzt, da Flex-Items
@@ -1005,7 +1004,7 @@ body.is-ringing .bottom-nav {
 /* Neutrale Marken-Fläche statt eines leeren/kaputt wirkenden Bereichs, wenn
    keine Anzeige geladen werden konnte (z. B. keine Internetverbindung
    unterwegs). */
-.location-ringing-ad.is-fallback-brand {
+.ringing-ad.is-fallback-brand {
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1013,7 +1012,7 @@ body.is-ringing .bottom-nav {
   color: var(--color-accent);
 }
 
-.location-ringing-body {
+.ringing-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1022,8 +1021,8 @@ body.is-ringing .bottom-nav {
   text-align: center;
   /* Oberer Puffer bewusst größer als der untere: AdMob-Richtlinien
      verlangen einen Mindestabstand zwischen Anzeige und interaktiven
-     Elementen (hier: der Swipe-Bereich unten), damit keine versehentlichen
-     Klicks provoziert werden. */
+     Elementen (hier: Schlummern-Button bzw. der Swipe-Bereich unten),
+     damit keine versehentlichen Klicks provoziert werden. */
   padding: 40px 24px 20px;
   gap: 8px;
 }
@@ -1039,11 +1038,6 @@ body.is-ringing .bottom-nav {
   font-size: 14px;
   color: var(--color-text-muted);
   max-width: 40ch;
-}
-
-.location-ringing-overlay .ringing-swipe {
-  flex: 0 0 auto;
-  padding: 0 24px calc(24px + var(--safe-bottom));
 }
 
 /* Timer-Tab: Modus-Umschaltung Einfach/Intervall (Tabata) */

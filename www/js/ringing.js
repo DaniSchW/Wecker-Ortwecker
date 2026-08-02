@@ -1,10 +1,18 @@
 (function () {
   'use strict';
 
-  var overlay, titleEl, timeEl, swipeTrack, swipeHandle, swipeHint, snoozeBtn;
+  var overlay, adSpace, titleEl, timeEl, swipeTrack, swipeHandle, swipeHint, snoozeBtn;
   var activeAlarm = null;
   var onStopCallback = null;
   var onSnoozeCallback = null;
+
+  // Neutrale Marken-Fläche statt eines leeren/kaputt wirkenden Bereichs, wenn
+  // keine Anzeige geladen werden konnte (analog locationRinging.js).
+  function setAdFallback(active) {
+    if (!adSpace) return;
+    adSpace.textContent = active ? window.i18n.t('app.name') : '';
+    adSpace.classList.toggle('is-fallback-brand', active);
+  }
 
   function formatNow() {
     var d = new Date();
@@ -70,12 +78,26 @@
     document.body.classList.add('is-ringing');
 
     window.alarmSound.start(alarm.sound || 'both');
+    if (window.ads.isNative()) {
+      // Native Anzeige liegt als eigenständige Systemansicht ÜBER der
+      // WebView und wird nicht über adSpace ins DOM eingehängt - adSpace
+      // bleibt nur die reservierte Freifläche (siehe CSS) und zeigt die
+      // Fallback-Fläche, falls keine Anzeige geladen werden konnte.
+      setAdFallback(false);
+      window.ads.showRingingBanner().then(function (shown) {
+        // Nur noch relevant, wenn der Bildschirm nicht laengst wieder
+        // geschlossen wurde (sehr schnelles Wegwischen).
+        if (overlay.classList.contains('is-visible')) setAdFallback(!shown);
+      });
+    }
   }
 
   function close() {
     window.alarmSound.stop();
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
+    window.ads.hideRingingBanner();
+    setAdFallback(false);
   }
 
   function stop() {
@@ -101,6 +123,10 @@
 
   function init() {
     overlay = document.getElementById('ringing-overlay');
+    adSpace = document.getElementById('ringing-ad');
+    if (adSpace && !window.ads.isNative()) {
+      adSpace.textContent = window.i18n.t('ringing.adPlaceholder');
+    }
     titleEl = document.getElementById('ringing-title');
     timeEl = document.getElementById('ringing-time');
     swipeTrack = document.getElementById('ringing-swipe-track');
