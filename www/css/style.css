@@ -979,7 +979,18 @@ body.is-ringing .bottom-nav {
 }
 
 .location-ringing-ad {
+  /* Exakt 50% der verfügbaren Bildschirmhöhe (.location-ringing-overlay
+     füllt per position:fixed;inset:0 die gesamte Bildschirmhöhe, davon die
+     Hälfte für die Anzeige) - fest, ob eine Anzeige geladen ist oder die
+     Fallback-Fläche gezeigt wird, damit sich beim Wechsel zwischen beiden
+     Zuständen nichts im Layout verschiebt. flex-grow/-shrink bewusst auf 0
+     UND zusätzlich min-height:0 + overflow:hidden gesetzt, da Flex-Items
+     sonst über ihre automatische Mindesthöhe (Inhalt) hinauswachsen
+     könnten, selbst mit flex-shrink:0 (bekannte Flexbox-Falle) - z. B. bei
+     langem Fallback-Text auf einem kurzen/querformatigen Bildschirm. */
   flex: 0 0 50%;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;

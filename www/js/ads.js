@@ -5,12 +5,27 @@
   // Google-Test-Ad-Unit aus Phase 6).
   var BANNER_AD_UNIT_ID = 'ca-app-pub-8453553622026562/4356031602';
 
-  // MEDIUM_RECTANGLE (300x250dp) ist das größte feste AdMob-Bannerformat -
-  // es gibt kein Standardformat, das wirklich 50% Bildschirmhöhe füllt (das
-  // wäre ein anderer Anzeigentyp, kein Banner mehr). Die reservierte Fläche
-  // im CSS (~50% Höhe) ist daher bewusst größer als die Anzeige selbst;
-  // MEDIUM_RECTANGLE wird oben in dieser Fläche zentriert/verankert.
-  var BANNER_AD_SIZE = 'MEDIUM_RECTANGLE';
+  // 'ADAPTIVE_BANNER' lässt @capacitor-community/admob intern exakt
+  // AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize() aufrufen
+  // (siehe BannerExecutor.java im Plugin) - die volle Bildschirmbreite wird
+  // dabei automatisch verwendet, Google berechnet dazu passend die Höhe.
+  //
+  // WICHTIG - technische Grenze dieses Plugins: Es gibt in seiner API
+  // (BannerAdOptions.adSize) NUR die hier verfügbaren, festen Enum-Werte;
+  // eine eigene Pixel-/dp-Höhe (z. B. "exakt 50% Bildschirmhöhe") lässt sich
+  // darüber nicht an die native AdView übergeben - das AdMob-SDK selbst
+  // kennt für Banner-Anzeigen nur Standardformate + adaptive Formate mit von
+  // Google berechneter Höhe, kein "beliebige Höhe"-Format. Weder
+  // ADAPTIVE_BANNER (i. d. R. 50-100dp) noch das vorher genutzte
+  // MEDIUM_RECTANGLE (fix 250dp) füllen also tatsächlich 50% der
+  // Bildschirmhöhe aus. Die per CSS exakt auf 50% fixierte Fläche
+  // (.location-ringing-ad, www/css/style.css) ist daher bewusst eine obere
+  // Begrenzung/reservierte Fläche, in der die Anzeige oben verankert wird -
+  // nicht die tatsächliche Anzeigengröße selbst. Eine Anzeige, die
+  // buchstäblich 50% Bildschirmhöhe ausfüllt, wäre technisch kein
+  // AdMob-Banner mehr, sondern ein anderer Anzeigentyp (z. B. Interstitial)
+  // oder würde eine eigene, native Erweiterung dieses Plugins erfordern.
+  var BANNER_AD_SIZE = 'ADAPTIVE_BANNER';
   var BANNER_POSITION = 'TOP_CENTER';
 
   // Ein per preload geladener, aber noch nicht gezeigter Banner wird beim

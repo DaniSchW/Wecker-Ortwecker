@@ -484,6 +484,55 @@ gezielt ergänzt:
   Netzwerk-Auslieferung auf einem echten Gerät ist wie bei allen nativen
   Integrationen in diesem Projekt nur dort abschließend prüfbar.
 
+### Werbefläche fest auf 50% Bildschirmhöhe (Alarm-Auslöse-Bildschirm)
+
+Nachtrag zur Werbefläche im Orts-Zeit-Wecker-Klingel-Bildschirm
+(`.location-ringing-ad`, `www/css/style.css` + `www/js/ads.js`):
+
+- **Container per CSS hart auf exakt 50% fixiert**: `flex: 0 0 50%` allein
+  reicht nicht ganz aus – ohne `min-height: 0` und `overflow: hidden`
+  können Flex-Items über ihre Flex-Basis hinauswachsen, wenn der Inhalt
+  (z. B. ein langer Fallback-Text auf einem kurzen/querformatigen
+  Bildschirm) mehr Platz beansprucht als die vorgegebenen 50% (bekannte
+  Flexbox-Falle: die automatische Mindesthöhe eines Flex-Items ist
+  standardmäßig seine Inhaltsgröße, nicht 0). Mit beiden Eigenschaften
+  ergänzt bleibt die Fläche nachweislich exakt 50% – per Playwright in
+  Hochformat und einem extremen Querformat-/Kurzbildschirm-Fall
+  gegengeprüft, jeweils im "Anzeige geladen"- und im "Fallback"-Zustand.
+- **AdSize auf `ADAPTIVE_BANNER` umgestellt** (vorher `MEDIUM_RECTANGLE`):
+  `@capacitor-community/admob` ruft dafür intern exakt
+  `AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize()` auf (siehe
+  `BannerExecutor.java` im Plugin) – die von der Aufgabenstellung
+  vorgeschlagene Google-API wird also tatsächlich verwendet, allerdings
+  indirekt über das Plugin, nicht direkt aus JS aufrufbar.
+- **Technische Grenze, die sich nicht auflösen ließ**: Die API des
+  Plugins (`BannerAdOptions.adSize`) akzeptiert ausschließlich die festen
+  Enum-Werte (`BANNER`, `FULL_BANNER`, `LARGE_BANNER`,
+  `MEDIUM_RECTANGLE`, `LEADERBOARD`, `ADAPTIVE_BANNER`, `SMART_BANNER`) –
+  eine eigene Pixel-/dp-Höhe lässt sich darüber **nicht** an die native
+  AdView übergeben, es gibt keinen "CUSTOM"-Größentyp. Das AdMob-SDK selbst
+  kennt für Banner-Anzeigen kein Format, das buchstäblich 50% der
+  Bildschirmhöhe ausfüllt (Adaptive Banner sind i. d. R. 50–100dp hoch,
+  MEDIUM_RECTANGLE fix 250dp) – ein Anzeigentyp mit derart großer,
+  frei bestimmbarer Höhe wäre technisch kein Banner mehr, sondern ein
+  anderer AdMob-Anzeigentyp (z. B. Interstitial), oder würde eine eigene
+  native Erweiterung dieses Plugins erfordern (Google bietet dafür in der
+  nativen SDK zwar `getInlineAdaptiveBannerAdSize(width, maxHeight)` an,
+  dieses Plugin bindet diese neuere API aber nicht ein). Die per CSS exakt
+  auf 50% fixierte Fläche ist daher weiterhin eine **reservierte
+  Höchstfläche**, in der die (kleinere) tatsächliche Anzeige oben
+  verankert wird (`TOP_CENTER`, `margin: 0`) – nicht die exakte
+  Anzeigengröße selbst. Das ist unverändert gegenüber der ursprünglichen
+  Phase-6-Umsetzung, nur jetzt mit einem Format, das eher der
+  Bildschirmbreite entspricht und tendenziell eine höhere Füllrate als
+  MEDIUM_RECTANGLE hat.
+- **Fallback-Fläche verschiebt nichts**: Da Anzeige und Fallback-Text
+  dasselbe `#location-ringing-ad`-Element nur unterschiedlich befüllen
+  (die native Anzeige selbst wird ohnehin als eigenständige Systemansicht
+  über der WebView eingeblendet, nicht ins DOM eingehängt), ist die
+  50%-Höhe in beiden Zuständen automatisch identisch – per Test
+  bestätigt.
+
 ## Entwicklung
 
 ```bash
