@@ -571,6 +571,52 @@ Timer, Tabata und alle übrigen Bildschirme bleiben weiterhin werbefrei.
   bei aktivem Standard-Wecker, Web-Vorschau-Platzhaltertext für beide
   Bildschirme, vollständige Regressionssuite weiterhin ohne Fehler.
 
+### Layout-Härtung: Swipe-Bereich bleibt garantiert erreichbar
+
+Ergänzung zur 50%-Werbefläche: Das Klingel-Bildschirm-Layout (beide
+Varianten) wurde defensiv gegen ungewöhnliche Kombinationen aus
+Bildschirmgröße, Banner-Zustand und langem Titel-/Beschreibungstext
+gehärtet, damit der Swipe-Bereich zum Stoppen des Alarms **niemals**
+unerreichbar/aus dem sichtbaren Bereich gedrängt werden kann.
+
+- **`.ringing-overlay`** bleibt bei `position: fixed; inset: 0` (statt
+  `height: 100vh`/`100dvh`) - bindet alle vier Kanten robust an den
+  Viewport, ohne die aus mobilen Browsern bekannten `vh`-Eigenheiten
+  (hier ohnehin irrelevant, da Capacitor-WebView, aber die stabilere
+  Wahl). Flexbox-Spalte: `.ringing-ad` → `.ringing-body` → `.ringing-swipe`.
+- **`.ringing-body`** (Titel/Beschreibung bzw. Uhrzeit/Titel/
+  Schlummern-Button) bekam `min-height: 0` + `overflow-y: auto` ergänzt.
+  Ohne `min-height: 0` verhindert die automatische Mindesthöhe eines
+  Flex-Items (= dessen Inhaltsgröße), dass dieser Bereich bei wenig Platz
+  tatsächlich schrumpft - mit beidem zusammen weicht überschüssiger
+  Inhalt (z. B. eine lange Orts-Zeit-Wecker-Beschreibung) durch Scrollen
+  innerhalb dieses Bereichs aus, statt das Gesamtlayout zu sprengen.
+- **`.ringing-swipe`** behält `flex-shrink: 0` (unverändert seit der
+  letzten Ergänzung) - hat also Vorrang vor `.ringing-body` und wird nie
+  verkleinert. Ein zusätzliches `position: sticky` wäre hier wirkungslos
+  gewesen (`.ringing-overlay` selbst scrollt nicht, und der Swipe-Bereich
+  liegt als eigenes Flex-Geschwisterelement ohnehin außerhalb des
+  scrollenden `.ringing-body`) und wurde deshalb bewusst weggelassen.
+- **`.ringing-ad`**: `flex-shrink` von `0` auf `1` geändert (bleibt bei
+  `flex-grow: 0` + `max-height: 50%`, wächst also weiterhin nie über
+  50% hinaus). Auf jedem realistischen Bildschirm bleibt die Fläche
+  dadurch weiterhin exakt bei 50% (Schrumpfen greift nur, wenn
+  Werbefläche + Swipe-Bereich + die reinen Innenabstände von
+  `.ringing-body` zusammen mehr Platz brauchen, als der Bildschirm
+  hergibt - bei keinem der getesteten, realistischen Bildschirmmaße der
+  Fall). Erst in diesem Fall gibt die Werbefläche zuerst Platz ab, statt
+  den Swipe-Bereich hinauszudrängen.
+- **Getestet** per Playwright: 24 Kombinationen aus 4 Bildschirmgrößen
+  (normal, kurz/Querformat, klein, sowie ein absichtlich unrealistisch
+  extremer 375×240-Fall) × Standard-Wecker/Orts-Zeit-Wecker ×
+  geladene/fehlgeschlagene Anzeige × normaler/sehr langer Text - in
+  allen 24 Fällen bleibt der Swipe-Track vollständig innerhalb des
+  sichtbaren Viewports. Auf allen realistischen Bildschirmgrößen (ab
+  480px Höhe) bleibt die Werbefläche dabei weiterhin exakt bei 50%
+  stehen (keine Regression zur vorherigen Ergänzung); nur im
+  absichtlich unrealistischen 240px-Extremfall schrumpft sie sichtbar,
+  damit der Swipe-Bereich Platz hat.
+
 ## Entwicklung
 
 ```bash

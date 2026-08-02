@@ -628,7 +628,12 @@ body {
 
 /* Alarm ringing overlay (Standard-Wecker UND Orts-Zeit-Wecker teilen sich
    dieses Grundlayout: oben reservierte Werbefläche über .ringing-ad, s.u.,
-   darunter die eigentlichen Inhalte). */
+   darunter die eigentlichen Inhalte). Flexbox-Spalte über die volle
+   Bildschirmhöhe: [.ringing-ad][.ringing-body][.ringing-swipe].
+   position:fixed + inset:0 bindet alle vier Kanten an den Viewport - das
+   ist robuster als eine explizite height:100vh/100dvh (kein Risiko durch
+   dynamische mobile Browser-Toolbars, hier ohnehin irrelevant, da als
+   Capacitor-WebView gerendert, aber so oder so die stabilere Variante). */
 .ringing-overlay {
   position: fixed;
   inset: 0;
@@ -668,6 +673,11 @@ body {
 }
 
 .ringing-swipe {
+  /* flex-shrink:0 (via "0 0 auto") verhindert, dass dieser Footer-Bereich
+     jemals zugunsten von .ringing-ad oder .ringing-body verkleinert wird -
+     zusammen mit .ringing-body's overflow-y:auto (siehe dort) bleibt der
+     Swipe-Bereich dadurch in jeder Bildschirmgröße/-form und unabhängig
+     von der Werbeflächen-Höhe immer vollständig sichtbar/erreichbar. */
   flex: 0 0 auto;
   text-align: center;
   padding: 0 24px calc(24px + var(--safe-bottom));
@@ -982,13 +992,29 @@ body.is-ringing .bottom-nav {
      position:fixed;inset:0 die gesamte Bildschirmhöhe, davon die Hälfte für
      die Anzeige) - fest, ob eine Anzeige geladen ist oder die
      Fallback-Fläche gezeigt wird, damit sich beim Wechsel zwischen beiden
-     Zuständen nichts im Layout verschiebt. flex-grow/-shrink bewusst auf 0
-     UND zusätzlich min-height:0 + overflow:hidden gesetzt, da Flex-Items
-     sonst über ihre automatische Mindesthöhe (Inhalt) hinauswachsen
-     könnten, selbst mit flex-shrink:0 (bekannte Flexbox-Falle) - z. B. bei
-     langem Fallback-Text auf einem kurzen/querformatigen Bildschirm. */
-  flex: 0 0 50%;
+     Zuständen nichts im Layout verschiebt. flex-grow bewusst auf 0 (waechst
+     nie ueber 50% hinaus) UND zusaetzlich min-height:0 + max-height:50% +
+     overflow:hidden gesetzt, da Flex-Items sonst ueber ihre automatische
+     Mindesthoehe (Inhalt) hinauswachsen koennten (bekannte Flexbox-Falle) -
+     z. B. bei langem Fallback-Text auf einem kurzen/querformatigen
+     Bildschirm. max-height ist hier redundant zu flex-basis (beide
+     begrenzen bereits auf 50%), dient aber als zusaetzliche, unabhaengige
+     Absicherung: selbst falls jemand kuenftig nur die flex-basis aendert
+     und dabei den Deckel vergisst, kann die Werbeflaeche dank max-height
+     trotzdem nie mehr als 50% beanspruchen.
+     flex-shrink bewusst NICHT 0, sondern 1: auf jedem realistischen
+     Bildschirm bleibt die Flaeche exakt bei 50% (Schrumpfen greift nur,
+     wenn .ringing-ad + .ringing-swipe (fixe Mindesthoehe) + die
+     Innenabstaende von .ringing-body zusammen tatsaechlich mehr Platz
+     brauchen, als der Bildschirm hergibt - auf keinem realen Telefon der
+     Fall, nur bei extrem kurzen/exotischen Viewport-Hoehen). Erst wenn das
+     eintritt, gibt die Werbeflaeche zuerst Platz ab, statt den
+     Swipe-Bereich aus dem sichtbaren Bereich zu draengen (der wiederum
+     bewusst flex-shrink:0 behaelt, siehe .ringing-swipe - Vorrang fuer die
+     Stopp-Bedienung vor der Werbeflaeche). */
+  flex: 0 1 50%;
   min-height: 0;
+  max-height: 50%;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1014,6 +1040,22 @@ body.is-ringing .bottom-nav {
 
 .ringing-body {
   flex: 1;
+  /* min-height:0 überschreibt die automatische Mindesthöhe eines
+     Flex-Items (die sonst dessen Inhaltsgröße wäre, siehe Kommentar bei
+     .ringing-ad) - erst dadurch kann dieser Bereich bei wenig Platz
+     tatsächlich kleiner werden als sein Inhalt, statt die Werbefläche
+     oben oder den Swipe-Bereich unten aus dem sichtbaren Bereich zu
+     drängen. overflow-y:auto sorgt dafür, dass überschüssiger Inhalt
+     (z. B. eine lange Orts-Zeit-Wecker-Beschreibung) dann innerhalb
+     dieses Bereichs scrollt statt das Layout zu sprengen - der
+     Swipe-Bereich bleibt als eigenes Flex-Geschwisterelement mit
+     flex-shrink:0 (s. .ringing-swipe) davon unberührt immer sichtbar am
+     unteren Bildschirmrand; ein zusätzliches position:sticky ist hier
+     nicht nötig, da .ringing-overlay selbst nicht scrollt und der
+     Swipe-Bereich ohnehin außerhalb dieses scrollenden Inhaltsbereichs
+     liegt. */
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
