@@ -67,6 +67,11 @@ dependencies {
     // (LocationAlarmNotifier/AlarmRingService) - "implementation" bei anderen
     // Modulen ist nicht zwingend nach außen sichtbar.
     implementation "androidx.core:core:$androidxCoreVersion"
+    // Ebenfalls explizit: @capgo/background-geolocation deklariert dies nur
+    // als eigenes "implementation" (also nicht transitiv sichtbar), wird
+    // aber von WeckerOrtsweckerApplication.java für den rein nativen
+    // Geofence-Empfänger benötigt (Vollbild-Alarm-Ergänzung).
+    implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"

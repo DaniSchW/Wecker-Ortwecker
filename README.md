@@ -352,6 +352,13 @@ Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
    Akku-Management (Xiaomi/MIUI o. ä.).
 6. Google-Play-Formular „Zugriff auf Standortdaten im Hintergrund"
    ausfüllen (ohne Freigabe wird die App abgelehnt).
+7. Vollbild-Alarm-Ergänzung (siehe Abschnitt oben) auf einem echten
+   Android-14+-Gerät verifizieren: Hinweis-Dialog erscheint, Einstellungen-
+   Weiterleitung funktioniert, und alle vier Testfälle (gesperrt,
+   Bildschirm aus, Hintergrund, komplett beendet) tatsächlich einen
+   Vollbild-Alarm mit Ton/Vibration auslösen - inkl. mindestens eines
+   Geräts mit aggressivem Akku-Management (Prozess-Killing-Verhalten
+   variiert stark zwischen Herstellern).
 
 **Werbung/Monetarisierung (Phase 6)**
 7. Echtes AdMob-Konto anlegen, App registrieren, echte App-ID/Ad-Unit-ID in
@@ -616,6 +623,152 @@ unerreichbar/aus dem sichtbaren Bereich gedrängt werden kann.
   stehen (keine Regression zur vorherigen Ergänzung); nur im
   absichtlich unrealistischen 240px-Extremfall schrumpft sie sichtbar,
   damit der Swipe-Bereich Platz hat.
+
+### Orts-Zeit-Wecker: Vollbild-Alarm statt einfacher Benachrichtigung
+
+Der Trigger-Mechanismus wurde von einer einfachen lokalen Benachrichtigung
+(Antippen öffnete die App) auf einen echten Vollbild-Alarm nach Vorbild
+nativer Wecker-Apps umgestellt. Das erforderte erstmals **eigenen
+nativen Code** in diesem Projekt (`android/app/src/main/java/app/
+weckerundort/mobile/`) statt nur der Konfiguration bestehender Plugins,
+da `@capacitor/local-notifications` kein `setFullScreenIntent()` anbietet.
+
+**Neue native Klassen:**
+
+- **`WeckerOrtsweckerApplication`** (Application-Subklasse, in
+  `AndroidManifest.xml` als `android:name` registriert): registriert
+  bereits in `onCreate()` einen Empfänger für die Geofence-Transition-
+  Broadcasts von `@capgo/background-geolocation`. Das ist der einzige
+  Weg, eine Auslösung auch dann zu erkennen, wenn der App-Prozess beim
+  Auslösen bereits komplett beendet war (task-killed) - das Plugin
+  registriert seinen eigenen Empfänger nämlich erst in der `load()`-
+  Methode seiner Capacitor-Plugin-Instanz, die nur existiert, wenn die
+  Activity/WebView tatsächlich läuft.
+- **`LocationAlarmNotifier`**: baut und postet die Vollbild-Notification
+  - eigener Kanal mit `Importance.HIGH` (tatsächlich schon seit einer
+  früheren Phase `IMPORTANCE_MAX=5`) und eigenem Sound (`alarm_default`,
+  s. u.), `setFullScreenIntent()` zeigt den Alarm bei gesperrtem
+  Bildschirm automatisch vollflächig an, bei entsperrtem/aktivem Gerät
+  stattdessen eine Heads-up-Benachrichtigung (Systemverhalten). **Ein
+  einziger Codepfad** bedient beide möglichen Auslöser - einen JS-Aufruf
+  (`LocationAlarmBridgePlugin.ringFullScreenAlarm()`, App-Prozess lebt)
+  oder den rein nativen Geofence-Empfänger (App-Prozess war beendet).
+  Damit kein Alarm doppelt ausgelöst wird, prüft der native Empfänger
+  zuerst `LocationAlarmBridgePlugin.isJsPipelineLoaded()`: Läuft die
+  JS-Pipeline bereits, übernimmt sie (mit vollständiger Wiederholungstyp-
+  /Pendel-Zeitfenster-Prüfung, siehe unten) die Entscheidung.
+- **`AlarmRingService`**: eigener Foreground-Service für Ton
+  (`MediaPlayer` mit `AudioAttributes.USAGE_ALARM`/`STREAM_ALARM` - klingelt
+  wie ein echter Wecker unabhängig vom Lautlos-/Klingelton-Profil, da der
+  Nutzer die Alarm-Lautstärke separat regelt) **und** Vibration
+  (`Vibrator`/`VibratorManager`), gesteuert nach der Ton-/Vibrations-/
+  Beides-Einstellung des jeweiligen Alarms - unabhängig vom
+  Benachrichtigungskanal-Sound, der nur den kurzen Anfangston beim
+  Posten der Notification liefert.
+- **`LocationAlarmBridgePlugin`**: die JS-Brücke (`ringFullScreenAlarm`,
+  `stopAlarmSound`, `consumePendingAlarm`/`pendingAlarm`-Event,
+  `canUseFullScreenIntent`/`openFullScreenIntentSettings` für die
+  Android-14-Berechtigung).
+- **`MainActivity`**: setzt beim Start über den Vollbild-Intent die für
+  die Anzeige über dem Sperrbildschirm nötigen Fenster-Flags
+  (`setShowWhenLocked`/`setTurnScreenOn`/`requestDismissKeyguard`,
+  Legacy-Flags unter API 27) - **nur** in diesem Fall, ein normaler
+  App-Start bleibt unverändert - und reicht die Alarm-Daten an JS weiter
+  (`consumePendingAlarm()` bei kaltem Start, `pendingAlarm`-Event bei
+  bereits laufender Activity).
+
+**Alarm-Sound-Datei ergänzt**: `res/raw/alarm_default.wav` existierte
+bisher trotz Referenz im Benachrichtigungskanal (`notifications.js`,
+seit einer früheren Phase) gar nicht - die Kanäle waren also bislang
+faktisch lautlos. Da in dieser Umgebung keine Audio-Asset-Werkzeuge zur
+Verfügung stehen, wurde ein kurzer, synthetischer Zwei-Ton-Beep (per
+Python-`wave`-Modul aus reinen Sinuswerten erzeugt) als echte,
+gültige WAV-Datei generiert - deutlich vom Standard-Systemton
+unterscheidbar, aber bewusst kein gestalteter/gebrandeter Klang; vor
+Store-Release ggf. durch einen professionell produzierten Alarmton
+ersetzen.
+
+**JS-seitige Änderungen:**
+
+- `backgroundGeofence.js`: `addGeofence()` sendet jetzt eine `payload`
+  mit Titel, Beschreibung und Ton-Einstellung mit - das Plugin
+  persistiert und liefert sie bei jeder Transition unverändert zurück
+  (`GeofenceStore.buildTransitionData`), sodass der native Pfad ohne
+  jeden JS-/localStorage-Zugriff an die nötigen Alarm-Daten kommt.
+- `geoTrigger.js`: `triggerCallback` gibt jetzt zusätzlich `locationId`
+  und `enter` (Ankunft/Abfahrt) durch.
+- `locationAlarms.js`: `notifyAlarmInBackground()` (die alte einfache
+  Benachrichtigung) entfernt, ersetzt durch
+  `locationAlarmBridge.ringFullScreenAlarm()`. Neuer Hinweis-Dialog
+  (`#fullscreen-intent-permission-modal`, Muster wie der bestehende
+  „Standort immer erlauben"-Dialog) für die Android-14-
+  Systemeinstellungen-Freigabe. `consumePendingAlarm()`/`onPendingAlarm()`
+  zeigen das Overlay, nachdem die Activity über den Vollbild-Intent
+  gestartet wurde, inkl. nachträglicher Zustands-Buchhaltung
+  (`wasInside`/`consumed`), falls diese beim ursprünglichen Auslösen
+  nicht laufen konnte (App-Prozess war da noch nicht wieder aktiv).
+- `locationRinging.js`: `show()`/`stop()` unterscheiden jetzt per
+  `options.nativeAudio`, ob Ton/Vibration vom nativen
+  `AlarmRingService` übernommen werden (kein doppelter Ton; `stop()`
+  ruft dann `stopAlarmSound()`) oder wie bisher von `alarmSound.js`
+  (reiner Vordergrund-Pfad, App war beim Auslösen bereits sichtbar
+  geöffnet).
+- Neu: `js/locationAlarmBridge.js` (dünner Wrapper um das native Plugin,
+  No-Ops im Browser-Vorschau).
+
+**Bekannte, bewusst dokumentierte Grenze**: Ist der App-Prozess beim
+Auslösen komplett beendet (kein JS aktiv - der eigentliche
+"task-killed"-Fall), kann der rein native Empfänger die nur in
+`localStorage` geführten Wiederholungstyp-Regeln (z. B. "einmalig
+bereits ausgelöst") und Pendel-Zeitfenster nicht erneut prüfen - er löst
+für jede zur registrierten Richtung (Ankunft/Abfahrt, korrekt gefiltert
+über `notifyOnEntry`/`notifyOnExit` pro Geofence) passende Transition
+aus. In der Praxis harmlos für die häufigsten Fälle (einmalige/
+permanente Alarme ohne Pendel-Fenster), kann aber in Randfällen (erneutes
+Betreten eines Orts nach bereits ausgelöstem "einmalig"-Alarm, während
+die App durchgehend beendet blieb) zu einem zusätzlichen Klingeln führen.
+Bei lebendigem App-Prozess (Vordergrund, Hintergrund, gesperrter
+Bildschirm, Bildschirm aus - solange der Prozess nicht beendet wurde)
+bleibt die vollständige JS-Prüfung in jedem Fall maßgeblich.
+
+**Getestet** per Playwright mit einer gemockten nativen Brücke: Ein
+Hintergrund-Trigger ruft `ringFullScreenAlarm()` mit den korrekten
+Alarm-Daten auf; ein simulierter Pending-Alarm (Vollbild-Intent-Start)
+zeigt das Overlay mit `nativeAudio` und wendet die nachträgliche
+Zustands-Buchhaltung korrekt an; `stop()` (Swipe im Overlay) ruft
+`stopAlarmSound()` statt der Web-Audio-Logik auf; der Android-14-
+Hinweis-Dialog erscheint korrekt, wenn `canUseFullScreenIntent()` "nicht
+erlaubt" meldet. Komplette bestehende Regressionssuite läuft weiterhin
+fehlerfrei.
+
+**Was sich in dieser Umgebung nicht verifizieren lässt** (wie bei jeder
+nativen Änderung in diesem Projekt, hier aber in deutlich größerem
+Umfang, da erstmals eigener nativer Code statt nur Plugin-Konfiguration):
+die eigentliche Kotlin/Java-Kompilierung und der Gradle-Build (kein
+Android-SDK in dieser Umgebung - Verifikation über die vorhandene
+GitHub-Actions-CI, siehe unten) sowie das tatsächliche Geräteverhalten in
+allen vier angeforderten Testfällen:
+
+1. **Bildschirm gesperrt** - Vollbild-Alarm sollte automatisch über dem
+   Sperrbildschirm erscheinen (setFullScreenIntent + Lockscreen-Flags).
+2. **Bildschirm aus** - wie 1., zusätzlich muss `setTurnScreenOn(true)`
+   den Bildschirm zuverlässig einschalten.
+3. **App im Hintergrund** (Prozess lebt) - JS-Pipeline bleibt
+   maßgeblich, Notification/Vollbild-Intent über
+   `ringFullScreenAlarm()`.
+4. **App komplett geschlossen (task-killed)** - rein nativer Pfad über
+   `WeckerOrtsweckerApplication`, mit der oben beschriebenen
+   dokumentierten Einschränkung bei Wiederholungstyp/Pendel-Fenstern.
+
+Insbesondere Fall 4 ist real bedeutsam: Vor dieser Änderung hätte ein
+Auslösen bei komplett beendetem Prozess **überhaupt nichts** bewirkt
+(nicht einmal die "einfache" Benachrichtigungsvariante) - der Plugin-
+eigene Broadcast-Empfänger existierte in diesem Fall schlicht nicht,
+da er erst mit der (nie gestarteten) Capacitor-Bridge registriert wird.
+Zudem lässt sich Android-Herstellervariation beim Umgang mit
+"App aus Recents entfernt" (manche OEMs beenden den Prozess aggressiver/
+schneller als AOSP) nur auf echten Geräten verschiedener Hersteller
+prüfen.
 
 ## Entwicklung
 
