@@ -81,6 +81,13 @@
                     latitude: loc.lat,
                     longitude: loc.lng,
                     radius: alarm.radius || 150,
+                    // Pro Region die Setup-weiten Einstellungen (beide an)
+                    // gezielt auf die konfigurierte Auslöse-Richtung
+                    // einschränken - relevant vor allem für den rein
+                    // nativen Killed-Process-Pfad (LocationAlarmNotifier),
+                    // der keine JS-Logik zur Richtungsprüfung mehr hat.
+                    notifyOnEntry: alarm.trigger !== 'departure',
+                    notifyOnExit: alarm.trigger === 'departure',
                     // Wird vom Plugin pro Region gespeichert und bei einer
                     // Transition unverändert mitgeliefert (siehe
                     // GeofenceStore.buildTransitionData im Plugin) - so
