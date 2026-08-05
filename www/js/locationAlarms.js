@@ -11,12 +11,15 @@
   var soundInputs, deleteBtn;
   var bgModal, bgAllowBtn, bgLaterBtn;
   var fsiModal, fsiAllowBtn, fsiLaterBtn;
+  var batteryModal, batteryAllowBtn, batteryLaterBtn;
   var privacyOptionsLink;
   var picker = null;
   var editingId = null;
   var geoStarted = false;
+  var geofenceServiceRunning = false;
   var BG_PROMPT_DISMISSED_KEY = 'wo.bgLocationPromptDismissed';
   var FSI_PROMPT_DISMISSED_KEY = 'wo.fullScreenIntentPromptDismissed';
+  var BATTERY_PROMPT_DISMISSED_KEY = 'wo.batteryOptimizationPromptDismissed';
 
   function repeatSummary(alarm) {
     if (alarm.repeatType === 'once') return window.i18n.t('locationAlarm.repeatOnce');
@@ -91,6 +94,7 @@
     if (enabled) {
       maybePromptBackgroundPermission();
       maybePromptFullScreenIntentPermission();
+      maybePromptBatteryOptimization();
     }
   }
 
@@ -211,6 +215,7 @@
     if (alarm.enabled) {
       maybePromptBackgroundPermission();
       maybePromptFullScreenIntentPermission();
+      maybePromptBatteryOptimization();
     }
   }
 
@@ -321,6 +326,33 @@
     fsiModal.classList.remove('is-visible');
   }
 
+  // Ohne Ausnahme von der Akku-Optimierung kann Android (v. a. OEMs wie
+  // Xiaomi/Huawei/Samsung mit eigenen, zusaetzlichen Batteriesparfunktionen)
+  // den Hintergrund-Prozess trotz Foreground-Service frueher einschlaefern -
+  // der Hinweis-Dialog fuehrt direkt zum System-Dialog zur Freigabe.
+  function maybePromptBatteryOptimization() {
+    if (!window.locationAlarmBridge.isNative()) return;
+    var dismissed = false;
+    try { dismissed = localStorage.getItem(BATTERY_PROMPT_DISMISSED_KEY) === '1'; } catch (e) {}
+    if (dismissed) return;
+
+    window.locationAlarmBridge.isIgnoringBatteryOptimizations().then(function (ignoring) {
+      if (ignoring) return;
+      batteryModal.classList.add('is-visible');
+    });
+  }
+
+  function dismissBatteryOptimizationPrompt() {
+    try { localStorage.setItem(BATTERY_PROMPT_DISMISSED_KEY, '1'); } catch (e) {}
+    batteryModal.classList.remove('is-visible');
+  }
+
+  function requestBatteryOptimizationFromModal() {
+    window.locationAlarmBridge.requestIgnoreBatteryOptimizations();
+    try { localStorage.setItem(BATTERY_PROMPT_DISMISSED_KEY, '1'); } catch (e) {}
+    batteryModal.classList.remove('is-visible');
+  }
+
   function syncTracking() {
     var alarms = window.storage.locationAlarms.getAll();
     var hasEnabled = alarms.some(function (a) { return a.enabled; });
@@ -341,6 +373,17 @@
     // Ortsliste wird einfach neu abgeglichen.
     if (window.backgroundGeofence && window.backgroundGeofence.isAvailable()) {
       window.backgroundGeofence.syncGeofences(alarms);
+    }
+
+    // Dauerhafter Keep-alive-Foreground-Service (zuverlässiger
+    // Hintergrundbetrieb, siehe GeofenceForegroundService) - laeuft, solange
+    // mindestens ein Orts-Zeit-Wecker aktiviert ist.
+    if (hasEnabled && !geofenceServiceRunning) {
+      window.locationAlarmBridge.startGeofenceService();
+      geofenceServiceRunning = true;
+    } else if (!hasEnabled && geofenceServiceRunning) {
+      window.locationAlarmBridge.stopGeofenceService();
+      geofenceServiceRunning = false;
     }
 
     // Werbebanner im Voraus laden, solange mindestens ein Orts-Zeit-Wecker
@@ -400,6 +443,13 @@
     fsiAllowBtn.addEventListener('click', openFullScreenIntentSettingsFromModal);
     fsiLaterBtn.addEventListener('click', dismissFullScreenIntentPrompt);
     fsiModal.querySelector('.modal-backdrop').addEventListener('click', dismissFullScreenIntentPrompt);
+
+    batteryModal = document.getElementById('battery-optimization-permission-modal');
+    batteryAllowBtn = document.getElementById('battery-optimization-permission-allow');
+    batteryLaterBtn = document.getElementById('battery-optimization-permission-later');
+    batteryAllowBtn.addEventListener('click', requestBatteryOptimizationFromModal);
+    batteryLaterBtn.addEventListener('click', dismissBatteryOptimizationPrompt);
+    batteryModal.querySelector('.modal-backdrop').addEventListener('click', dismissBatteryOptimizationPrompt);
 
     privacyOptionsLink = document.getElementById('privacy-options-link');
     privacyOptionsLink.addEventListener('click', function () { window.ads.openPrivacyOptions(); });

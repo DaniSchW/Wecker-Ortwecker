@@ -103,6 +103,11 @@
   "fsiPermission.later": "Später",
   "fsiPermission.allow": "Einstellungen öffnen",
 
+  "batteryPermission.title": "Akku-Optimierung deaktivieren",
+  "batteryPermission.body": "Damit dieser Orts-Zeit-Wecker zuverlässig im Hintergrund aktiv bleibt, sollte die Akku-Optimierung für diese App deaktiviert werden. Andernfalls kann das System die Standort-Überwachung vorzeitig beenden.",
+  "batteryPermission.later": "Später",
+  "batteryPermission.allow": "Einstellungen öffnen",
+
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stopp",
   "stopwatch.reset": "Reset",

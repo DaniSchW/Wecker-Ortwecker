@@ -103,6 +103,11 @@
   "fsiPermission.later": "Later",
   "fsiPermission.allow": "Open settings",
 
+  "batteryPermission.title": "Disable battery optimization",
+  "batteryPermission.body": "For this location alarm to stay reliably active in the background, battery optimization should be disabled for this app. Otherwise the system may stop location monitoring prematurely.",
+  "batteryPermission.later": "Later",
+  "batteryPermission.allow": "Open settings",
+
   "stopwatch.start": "Start",
   "stopwatch.stop": "Stop",
   "stopwatch.reset": "Reset",

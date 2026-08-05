@@ -359,6 +359,13 @@ Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
    Vollbild-Alarm mit Ton/Vibration auslösen - inkl. mindestens eines
    Geräts mit aggressivem Akku-Management (Prozess-Killing-Verhalten
    variiert stark zwischen Herstellern).
+8. Ergänzung "Zuverlässiger Hintergrundbetrieb" (siehe Abschnitt oben) auf
+   einem echten Gerät verifizieren: dauerhafte "Orts-Zeit-Wecker aktiv"-
+   Notification erscheint beim Aktivieren, Akku-Optimierung-Hinweisdialog
+   öffnet den richtigen System-Dialog, und der Dienst überlebt (per
+   `START_STICKY`) einen erzwungenen Prozess-Kill unter Speicherdruck -
+   inkl. Google-Play-Formular-Begründung für
+   `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.
 
 **Werbung/Monetarisierung (Phase 6)**
 7. Echtes AdMob-Konto anlegen, App registrieren, echte App-ID/Ad-Unit-ID in
@@ -769,6 +776,79 @@ Zudem lässt sich Android-Herstellervariation beim Umgang mit
 "App aus Recents entfernt" (manche OEMs beenden den Prozess aggressiver/
 schneller als AOSP) nur auf echten Geräten verschiedener Hersteller
 prüfen.
+
+### Zuverlässiger Hintergrundbetrieb für das Geofencing
+
+Ergänzung zum Vollbild-Alarm-Umbau oben: Das Geofencing selbst läuft
+technisch bereits systemseitig über Google Play Services
+(`GeofencingClient` + `PendingIntent`, siehe `@capgo/background-geolocation`)
+und würde grundsätzlich auch ohne eigenen Foreground-Service
+funktionieren. In der Praxis greifen aber v. a. OEM-eigene, über AOSP
+hinausgehende Batteriesparfunktionen (Xiaomi MIUI, Huawei, Samsung u. Ä.)
+zusätzlich zum reinen Android-Doze-Modus und können Hintergrund-Prozesse
+ohne aktiven Foreground-Service und ohne Ausnahme von der
+Akku-Optimierung deutlich früher/aggressiver drosseln. Diese Ergänzung
+macht die App robuster dagegen, ähnlich wie Fitness-Tracker-/
+Navigations-Apps:
+
+- **Neu: `GeofenceForegroundService.java`** - dauerhafter, dezenter
+  Foreground-Service (eigener Low-Importance-Kanal, `setSilent(true)`,
+  `setOngoing(true)`, `foregroundServiceType="location"`) mit der
+  Notification "Orts-Zeit-Wecker aktiv". Start/Stop über
+  `LocationAlarmBridgePlugin.startGeofenceService()`/
+  `stopGeofenceService()`, aufgerufen aus `locationAlarms.js`s
+  `syncTracking()` - läuft, solange mindestens ein Orts-Zeit-Wecker
+  aktiviert ist, wird beendet, sobald keiner mehr aktiv ist.
+  `onStartCommand()` gibt `START_STICKY` zurück, damit Android den Dienst
+  nach einem harten System-Kill (z. B. unter Speicherdruck) möglichst
+  automatisch neu startet, solange noch ein Alarm aktiviert ist - ein
+  bewusstes Force-Stop durch den Nutzer selbst kann kein Code umgehen,
+  das ist eine Android-Systemgrenze.
+- **`ACCESS_BACKGROUND_LOCATION`**: war bereits vor dieser Ergänzung
+  korrekt implementiert - `@capgo/background-geolocation`s
+  `requestPermissions()` fragt sie erst NACH erteilter
+  Vordergrund-Standortberechtigung in einem separaten System-Dialog an
+  (`requestBackgroundLocationPermissionIfNeeded()` im Plugin), wie es
+  Android ab Version 10 zwingend vorschreibt (beide zusammen in einem
+  Dialog anzufragen wird vom System schlicht nicht erlaubt/ignoriert).
+  Der bestehende `#background-permission-modal`-Hinweisdialog deckt das
+  bereits ab.
+- **Neu: Akku-Optimierung-Ausnahme-Dialog** - `#battery-optimization-permission-modal`
+  (gleiches Muster wie die bestehenden Standort-/Vollbild-Hinweisdialoge),
+  erscheint beim Aktivieren eines Orts-Zeit-Weckers, wenn
+  `LocationAlarmBridgePlugin.isIgnoringBatteryOptimizations()` (via
+  `PowerManager.isIgnoringBatteryOptimizations()`) noch keine Ausnahme
+  meldet. "Einstellungen öffnen" ruft `requestIgnoreBatteryOptimizations()`
+  auf, das den direkten System-Dialog via
+  `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` öffnet (Nutzer
+  muss dort explizit "Zulassen" tippen) - deutlich schneller als über die
+  allgemeine App-Liste in den Einstellungen zu navigieren.
+- Neue Manifest-Einträge: `<service>` für `GeofenceForegroundService`,
+  Berechtigungen `FOREGROUND_SERVICE_LOCATION` (ab Android 14 zusätzlich
+  zu `ACCESS_BACKGROUND_LOCATION` für einen `foregroundServiceType="location"`-
+  Service zwingend) und `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.
+
+**Store-Hinweis**: `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` ist eine
+"special use"-Berechtigung, die Google Play beim Veröffentlichen im
+Play-Console-Formular explizit begründet werden muss (Zweck: zuverlässige
+Auslösung eines vom Nutzer aktiv eingerichteten ortsbasierten Alarms auch
+im Hintergrund) - siehe Checkliste unten.
+
+**Getestet** per Playwright mit gemockter nativer Brücke: Aktivieren
+eines Orts-Zeit-Weckers ruft `startGeofenceService()` genau einmal auf
+(Übergang von "kein aktiver Alarm" zu "mindestens einer aktiv"); der
+Akku-Optimierung-Hinweisdialog erscheint korrekt, wenn
+`isIgnoringBatteryOptimizations()` "nein" meldet, und ruft nach Klick auf
+"Einstellungen öffnen" `requestIgnoreBatteryOptimizations()` genau einmal
+auf und blendet sich aus. **Nicht verifizierbar in dieser Umgebung** (wie
+bei jeder nativen Ergänzung hier): die tatsächliche Kompilierung
+(Verifikation über GitHub-Actions-CI) sowie das reale Verhalten auf
+einem Gerät - insbesondere, ob der Foreground-Service den Prozess nach
+einem harten Kill tatsächlich per `START_STICKY` neu startet, und wie
+sich OEM-spezifische Batteriesparfunktionen (die teils auch mit erteilter
+Akku-Optimierung-Ausnahme noch eigene, App-spezifische Schalter kennen,
+z. B. MIUIs "Autostart") trotz aller hier implementierten Maßnahmen
+verhalten.
 
 ## Entwicklung
 

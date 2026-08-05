@@ -18,6 +18,14 @@
     <string name="location_alarm_ring_service_channel_description">Läuft, solange ein Orts-Zeit-Wecker klingelt.</string>
     <string name="location_alarm_ring_service_notification_text">Alarm klingelt…</string>
 
+    <!-- GeofenceForegroundService: dauerhafte, dezente Notification, solange
+         mindestens ein Orts-Zeit-Wecker aktiviert ist (zuverlässiger
+         Hintergrundbetrieb, siehe README). -->
+    <string name="geofence_service_channel_name">Orts-Zeit-Wecker aktiv</string>
+    <string name="geofence_service_channel_description">Läuft, solange mindestens ein Orts-Zeit-Wecker überwacht wird.</string>
+    <string name="geofence_service_notification_title">Orts-Zeit-Wecker aktiv</string>
+    <string name="geofence_service_notification_text">Standort wird im Hintergrund überwacht</string>
+
     <!-- Phase 6, @capacitor-community/admob: echte App-ID aus dem eigenen
          AdMob-Konto (ersetzt die vorherige Google-Test-App-ID). Vor dem
          Live-Schalten unbedingt README, Abschnitt "Phase 6 Ergänzung" lesen -

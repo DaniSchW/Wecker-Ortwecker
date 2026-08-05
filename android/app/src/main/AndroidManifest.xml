@@ -38,6 +38,15 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- Zuverlässiger Hintergrundbetrieb (Ergänzung): dauerhafter
+             Keep-alive-Foreground-Service mit dezenter Notification
+             ("Orts-Zeit-Wecker aktiv"), analog zu Fitness-Tracker-/
+             Navigations-Apps - siehe GeofenceForegroundService.java. -->
+        <service
+            android:name=".GeofenceForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
         <!-- Phase 6, @capacitor-community/admob. admob_app_id (strings.xml) ist
              aktuell Googles offizielle TEST-App-ID - vor Store-Release durch die
              echte AdMob-App-ID ersetzen (siehe README). -->
@@ -71,4 +80,19 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Zuverlässiger Hintergrundbetrieb für das Geofencing (Ergänzung):
+         FOREGROUND_SERVICE_LOCATION ist ab Android 14 (API 34) zwingend für
+         einen Foreground-Service mit foregroundServiceType="location"
+         zusätzlich zu ACCESS_BACKGROUND_LOCATION nötig (siehe
+         GeofenceForegroundService.java). REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+         erlaubt den direkten System-Dialog zur Freigabe der
+         Akku-Optimierung-Ausnahme (siehe LocationAlarmBridgePlugin.
+         requestIgnoreBatteryOptimizations() und den zugehörigen
+         Hinweis-Dialog in locationAlarms.js) - ist eine "special use"-
+         Berechtigung, die Google Play beim Veröffentlichen im Play-
+         Console-Formular begründet werden muss (siehe README, Abschnitt
+         Release-Checkliste). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 </manifest>

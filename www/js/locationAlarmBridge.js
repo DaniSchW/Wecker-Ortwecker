@@ -80,6 +80,32 @@
     return plugin().openFullScreenIntentSettings().catch(function () {});
   }
 
+  // Dauerhafter Keep-alive-Foreground-Service (GeofenceForegroundService) -
+  // laeuft, solange mindestens ein Orts-Zeit-Wecker aktiviert ist (siehe
+  // locationAlarms.js's syncTracking()).
+  function startGeofenceService() {
+    if (!isNative() || !plugin()) return Promise.resolve();
+    return plugin().startGeofenceService().catch(function () {});
+  }
+
+  function stopGeofenceService() {
+    if (!isNative() || !plugin()) return Promise.resolve();
+    return plugin().stopGeofenceService().catch(function () {});
+  }
+
+  function isIgnoringBatteryOptimizations() {
+    if (!isNative() || !plugin()) return Promise.resolve(true);
+    return plugin()
+      .isIgnoringBatteryOptimizations()
+      .then(function (res) { return !!res && res.ignoring !== false; })
+      .catch(function () { return true; });
+  }
+
+  function requestIgnoreBatteryOptimizations() {
+    if (!isNative() || !plugin()) return Promise.resolve();
+    return plugin().requestIgnoreBatteryOptimizations().catch(function () {});
+  }
+
   window.locationAlarmBridge = {
     isNative: isNative,
     ringFullScreenAlarm: ringFullScreenAlarm,
@@ -87,6 +113,10 @@
     consumePendingAlarm: consumePendingAlarm,
     onPendingAlarm: onPendingAlarm,
     canUseFullScreenIntent: canUseFullScreenIntent,
-    openFullScreenIntentSettings: openFullScreenIntentSettings
+    openFullScreenIntentSettings: openFullScreenIntentSettings,
+    startGeofenceService: startGeofenceService,
+    stopGeofenceService: stopGeofenceService,
+    isIgnoringBatteryOptimizations: isIgnoringBatteryOptimizations,
+    requestIgnoreBatteryOptimizations: requestIgnoreBatteryOptimizations
   };
 })();

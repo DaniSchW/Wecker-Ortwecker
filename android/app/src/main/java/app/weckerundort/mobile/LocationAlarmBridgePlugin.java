@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -117,6 +118,60 @@ public class LocationAlarmBridgePlugin extends Plugin {
                 getContext().startActivity(intent);
             } catch (Exception e) {
                 call.reject("Einstellungsseite konnte nicht geöffnet werden", e);
+                return;
+            }
+        }
+        call.resolve();
+    }
+
+    /**
+     * Startet den dauerhaften Keep-alive-Foreground-Service für das
+     * Hintergrund-Geofencing (siehe GeofenceForegroundService) - aufgerufen
+     * von backgroundGeofence.js's syncGeofences(), solange mindestens ein
+     * Orts-Zeit-Wecker aktiviert ist.
+     */
+    @PluginMethod
+    public void startGeofenceService(PluginCall call) {
+        GeofenceForegroundService.start(getContext());
+        call.resolve();
+    }
+
+    /** Beendet den Keep-alive-Dienst, sobald kein Orts-Zeit-Wecker mehr aktiviert ist. */
+    @PluginMethod
+    public void stopGeofenceService(PluginCall call) {
+        GeofenceForegroundService.stop(getContext());
+        call.resolve();
+    }
+
+    /**
+     * Prüft, ob die App von der Akku-Optimierung ausgenommen ist. Ohne diese
+     * Ausnahme kann Android (v. a. bei OEMs wie Xiaomi/Huawei/Samsung mit
+     * eigenen, aggressiveren Batteriesparfunktionen) den Hintergrund-Prozess
+     * trotz Foreground-Service deutlich früher einschläfern.
+     */
+    @PluginMethod
+    public void isIgnoringBatteryOptimizations(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean ignoring = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PowerManager powerManager = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+            ignoring = powerManager != null && powerManager.isIgnoringBatteryOptimizations(getContext().getPackageName());
+        }
+        result.put("ignoring", ignoring);
+        call.resolve(result);
+    }
+
+    /** Zeigt den System-Dialog zur direkten Freigabe der Akku-Optimierung-Ausnahme für diese App. */
+    @PluginMethod
+    public void requestIgnoreBatteryOptimizations(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                getContext().startActivity(intent);
+            } catch (Exception e) {
+                call.reject("Akku-Optimierung-Dialog konnte nicht geöffnet werden", e);
                 return;
             }
         }
