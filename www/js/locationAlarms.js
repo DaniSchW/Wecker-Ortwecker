@@ -9,6 +9,7 @@
   var triggerButtons, repeatButtons, periodicOptions, periodicUnitSelect, periodicCustomWrap, periodicCustomInput;
   var commuteCheckbox, commuteOptions, commuteDayButtons, commuteStart, commuteEnd;
   var soundInputs, deleteBtn;
+  var ringOverrideCheckbox, ringOverrideOptions, ringDurationInput, pauseDurationInput, maxCyclesInput;
   var bgModal, bgAllowBtn, bgLaterBtn;
   var fsiModal, fsiAllowBtn, fsiLaterBtn;
   var batteryModal, batteryAllowBtn, batteryLaterBtn;
@@ -119,6 +120,10 @@
     commuteOptions.hidden = !commuteCheckbox.checked;
   }
 
+  function updateRingOverrideVisibility() {
+    ringOverrideOptions.hidden = !ringOverrideCheckbox.checked;
+  }
+
   function openEditor(id) {
     editingId = id || null;
     var alarm = id ? window.storage.locationAlarms.getAll().find(function (a) { return a.id === id; }) : null;
@@ -145,6 +150,13 @@
 
     var sound = alarm ? alarm.sound : 'both';
     soundInputs.forEach(function (input) { input.checked = input.value === sound; });
+
+    var ringDefaults = window.ringSettings.get();
+    ringOverrideCheckbox.checked = !!(alarm && alarm.ringOverrideEnabled);
+    ringDurationInput.value = String(alarm && alarm.ringDurationSec ? alarm.ringDurationSec : ringDefaults.ringDurationSec);
+    pauseDurationInput.value = String(Math.round((alarm && alarm.pauseDurationSec ? alarm.pauseDurationSec : ringDefaults.pauseDurationSec) / 60));
+    maxCyclesInput.value = String(alarm && alarm.maxCycles ? alarm.maxCycles : ringDefaults.maxCycles);
+    updateRingOverrideVisibility();
 
     picker.setLocations(alarm ? alarm.locations : []);
     picker.setRadius(alarm ? alarm.radius : 150);
@@ -206,6 +218,10 @@
     var sound = 'both';
     soundInputs.forEach(function (input) { if (input.checked) sound = input.value; });
     alarm.sound = sound;
+    alarm.ringOverrideEnabled = ringOverrideCheckbox.checked;
+    alarm.ringDurationSec = parseInt(ringDurationInput.value, 10) || window.ringSettings.DEFAULTS.ringDurationSec;
+    alarm.pauseDurationSec = (parseInt(pauseDurationInput.value, 10) || 5) * 60;
+    alarm.maxCycles = parseInt(maxCyclesInput.value, 10) || window.ringSettings.DEFAULTS.maxCycles;
     if (alarm.enabled === undefined) alarm.enabled = true;
 
     window.storage.locationAlarms.upsert(alarm);
@@ -236,25 +252,33 @@
   }
 
   // Loest den nativen Vollbild-Alarm aus (setFullScreenIntent + eigener
-  // Ton/Vibration-Dienst, siehe LocationAlarmNotifier/AlarmRingService) -
+  // Ton/Vibration-/Zyklen-Dienst, siehe AlarmNotifier/AlarmRingService) -
   // ersetzt die vorherige einfache Benachrichtigung. Nur erreichbar, nachdem
   // die vollstaendige Ausloese-Pruefung (Wiederholungstyp, Pendel-
-  // Zeitfenster) in geoTrigger.js bereits positiv war.
+  // Zeitfenster) in geoTrigger.js bereits positiv war. Auf nativer
+  // Plattform IMMER ueber den nativen Dienst (unabhaengig von Sichtbarkeit),
+  // damit das Dauerklingel-Verhalten (Zyklen/Pause) einheitlich greift -
+  // das Overlay wird trotzdem direkt gezeigt, da die App ja bereits aktiv
+  // ist und nicht erst ueber den Vollbild-Intent-Umweg starten muss.
   function handleTrigger(alarm, locationId, enter) {
-    if (document.visibilityState === 'visible') {
-      // App ist gerade sichtbar geoeffnet - direkt das Overlay zeigen, kein
-      // Umweg ueber eine Benachrichtigung noetig.
-      ringAlarmNow(alarm);
+    if (window.locationAlarmBridge.isNative()) {
+      window.locationAlarmBridge.ringFullScreenAlarm({ kind: 'location', alarm: alarm, locationId: locationId, enter: enter });
+      ringAlarmNow(alarm, { nativeAudio: true });
     } else {
-      window.locationAlarmBridge.ringFullScreenAlarm(alarm, locationId, enter);
+      ringAlarmNow(alarm);
     }
   }
 
   // Wird beim App-Start (kalter Start ueber den Vollbild-Intent) bzw. bei
   // einem erneuten Intent waehrend die App schon lief (onNewIntent) mit den
-  // Daten aufgerufen, die LocationAlarmNotifier der Benachrichtigung
-  // mitgegeben hat - zeigt das Overlay mit nativ uebernommenem Ton/Vibration.
+  // Daten aufgerufen, die AlarmNotifier der Benachrichtigung mitgegeben hat
+  // - zeigt das Overlay mit nativ uebernommenem Ton/Vibration. Feuert auch
+  // bei jeder Wiederaufnahme nach einer Klingel-Pause erneut (siehe
+  // AlarmRingService.repost) - die Zustands-Buchhaltung unten darf dann
+  // nicht nochmal laufen, daher der isActive()-Kurzschluss.
   function ringAlarmFromNativePending(pending) {
+    if (pending.kind !== 'location') return;
+    if (window.locationRinging.isActive(pending.alarmId)) return;
     var alarms = window.storage.locationAlarms.getAll();
     var alarm = alarms.find(function (a) { return a.id === pending.alarmId; });
     if (!alarm) return;
@@ -430,6 +454,13 @@
     soundInputs = Array.prototype.slice.call(document.querySelectorAll('input[name="loc-sound"]'));
     deleteBtn = document.getElementById('location-alarm-delete');
 
+    ringOverrideCheckbox = document.getElementById('loc-ring-override-enabled');
+    ringOverrideOptions = document.getElementById('loc-ring-override-options');
+    ringDurationInput = document.getElementById('loc-ring-duration');
+    pauseDurationInput = document.getElementById('loc-pause-duration');
+    maxCyclesInput = document.getElementById('loc-max-cycles');
+    ringOverrideCheckbox.addEventListener('change', updateRingOverrideVisibility);
+
     bgModal = document.getElementById('background-permission-modal');
     bgAllowBtn = document.getElementById('background-permission-allow');
     bgLaterBtn = document.getElementById('background-permission-later');
@@ -479,17 +510,13 @@
 
     window.geoTrigger.onTrigger(handleTrigger);
 
-    // Alarm, der ueber einen Vollbild-Intent ausgeloest wurde: entweder
-    // stand er schon vor dem Laden dieses Plugins bereit (kalter Start -
-    // consumePendingAlarm), oder er trifft waehrend die App bereits laeuft
-    // erneut ein (App im Hintergrund offen, Sperrbildschirm zeigt den
-    // Alarm - onNewIntent in MainActivity.java, siehe pendingAlarm-Event).
-    window.locationAlarmBridge.consumePendingAlarm().then(function (pending) {
-      if (pending) ringAlarmFromNativePending(pending);
-    });
-    window.locationAlarmBridge.onPendingAlarm(function (pending) {
-      ringAlarmFromNativePending(pending);
-    });
+    // Das Abholen/Verteilen eines ueber einen Vollbild-Intent ausgeloesten
+    // Alarms (kalter Start via consumePendingAlarm sowie live via
+    // onPendingAlarm) laeuft zentral in app.js, NICHT hier - beide
+    // Alarm-Arten teilen sich dieselbe native Bridge, und
+    // consumePendingAlarm() ist ein einmalig konsumierbarer Aufruf (siehe
+    // MainActivity.consumePendingAlarm()); wuerde jedes Tab-Modul ihn
+    // selbst aufrufen, bekaeme nur eines der beiden Module die Daten.
 
     render();
     syncTracking();
@@ -500,5 +527,10 @@
     syncTracking();
   }
 
-  window.locationAlarmsTab = { init: init, render: render, resyncAll: resyncAll };
+  window.locationAlarmsTab = {
+    init: init,
+    render: render,
+    resyncAll: resyncAll,
+    ringFromNativePending: ringAlarmFromNativePending
+  };
 })();

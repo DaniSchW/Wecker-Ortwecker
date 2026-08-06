@@ -6,6 +6,7 @@
 
   var grid, modal, form, timeInput, labelInput, soundInputs, dayButtons, deleteBtn, modalTitle;
   var snoozeEnabledCheckbox, snoozeOptions, snoozeMinutesSelect;
+  var ringOverrideCheckbox, ringOverrideOptions, ringDurationInput, pauseDurationInput, maxCyclesInput;
   var editingId = null;
 
   function formatDays(days) {
@@ -123,12 +124,23 @@
     snoozeMinutesSelect.value = String(alarm && alarm.snoozeMinutes ? alarm.snoozeMinutes : 10);
     updateSnoozeVisibility();
 
+    var ringDefaults = window.ringSettings.get();
+    ringOverrideCheckbox.checked = !!(alarm && alarm.ringOverrideEnabled);
+    ringDurationInput.value = String(alarm && alarm.ringDurationSec ? alarm.ringDurationSec : ringDefaults.ringDurationSec);
+    pauseDurationInput.value = String(Math.round((alarm && alarm.pauseDurationSec ? alarm.pauseDurationSec : ringDefaults.pauseDurationSec) / 60));
+    maxCyclesInput.value = String(alarm && alarm.maxCycles ? alarm.maxCycles : ringDefaults.maxCycles);
+    updateRingOverrideVisibility();
+
     deleteBtn.hidden = !alarm;
     modal.classList.add('is-visible');
   }
 
   function updateSnoozeVisibility() {
     snoozeOptions.hidden = !snoozeEnabledCheckbox.checked;
+  }
+
+  function updateRingOverrideVisibility() {
+    ringOverrideOptions.hidden = !ringOverrideCheckbox.checked;
   }
 
   function defaultTime() {
@@ -210,6 +222,10 @@
     alarm.sound = sound;
     alarm.snoozeEnabled = snoozeEnabledCheckbox.checked;
     alarm.snoozeMinutes = parseInt(snoozeMinutesSelect.value, 10) || 10;
+    alarm.ringOverrideEnabled = ringOverrideCheckbox.checked;
+    alarm.ringDurationSec = parseInt(ringDurationInput.value, 10) || window.ringSettings.DEFAULTS.ringDurationSec;
+    alarm.pauseDurationSec = (parseInt(pauseDurationInput.value, 10) || 5) * 60;
+    alarm.maxCycles = parseInt(maxCyclesInput.value, 10) || window.ringSettings.DEFAULTS.maxCycles;
     if (alarm.enabled === undefined) alarm.enabled = true;
 
     window.storage.alarms.upsert(alarm);
@@ -247,6 +263,26 @@
     window.storage.alarms.upsert(alarm);
   }
 
+  function onRingStopped(stoppedAlarm) {
+    if (!stoppedAlarm.days.length) {
+      stoppedAlarm.enabled = false;
+      stoppedAlarm.notificationIds = [];
+    }
+    stoppedAlarm.snoozeNotificationId = null;
+    window.storage.alarms.upsert(stoppedAlarm);
+    render();
+  }
+
+  // Reagiert auf das Feuern der über @capacitor/local-notifications
+  // geplanten Benachrichtigung, waehrend die JS-Pipeline bereits laeuft
+  // (Vordergrund oder Hintergrund, Prozess lebt). Loest auf nativer
+  // Plattform IMMER den echten Dauerklingel-Mechanismus aus (Vollbild-Intent
+  // + eigenstaendige Ton-/Vibrations-/Zyklen-Steuerung ueber
+  // AlarmRingService, siehe locationAlarmBridge.js) statt sich auf den
+  // einmaligen Kanal-Ton der Benachrichtigung zu verlassen - und zeigt das
+  // Overlay direkt selbst, da die App ja bereits aktiv ist und nicht erst
+  // ueber den Vollbild-Intent-Umweg (MainActivity.consumePendingAlarm())
+  // starten muss.
   function handleFire(evt) {
     var extra = evt.notification && evt.notification.extra;
     if (!extra || extra.type !== 'alarm') return;
@@ -254,15 +290,25 @@
     if (!alarm) return;
     alarm.snoozeNotificationId = null;
 
-    window.ringing.show(alarm, function (stoppedAlarm) {
-      if (!stoppedAlarm.days.length) {
-        stoppedAlarm.enabled = false;
-        stoppedAlarm.notificationIds = [];
-      }
-      stoppedAlarm.snoozeNotificationId = null;
-      window.storage.alarms.upsert(stoppedAlarm);
-      render();
-    }, handleSnooze);
+    if (window.locationAlarmBridge.isNative()) {
+      window.locationAlarmBridge.ringFullScreenAlarm({ kind: 'standard', alarm: alarm, enter: true });
+      window.ringing.show(alarm, onRingStopped, handleSnooze, { nativeAudio: true });
+    } else {
+      window.ringing.show(alarm, onRingStopped, handleSnooze);
+    }
+  }
+
+  // Wird beim App-Start (kalter Start ueber den Vollbild-Intent) bzw. bei
+  // einem erneuten Intent waehrend die App schon lief (onNewIntent) mit den
+  // Daten aufgerufen, die AlarmNotifier der Benachrichtigung mitgegeben hat
+  // - zeigt das Overlay mit nativ uebernommenem Ton/Vibration.
+  function ringAlarmFromNativePending(pending) {
+    if (pending.kind !== 'standard') return;
+    if (window.ringing.isActive(pending.alarmId)) return;
+    var alarm = window.storage.alarms.getAll().find(function (a) { return a.id === pending.alarmId; });
+    if (!alarm) return;
+    alarm.snoozeNotificationId = null;
+    window.ringing.show(alarm, onRingStopped, handleSnooze, { nativeAudio: true });
   }
 
   function init() {
@@ -279,6 +325,13 @@
     snoozeOptions = document.getElementById('alarm-snooze-options');
     snoozeMinutesSelect = document.getElementById('alarm-snooze-minutes');
     snoozeEnabledCheckbox.addEventListener('change', updateSnoozeVisibility);
+
+    ringOverrideCheckbox = document.getElementById('alarm-ring-override-enabled');
+    ringOverrideOptions = document.getElementById('alarm-ring-override-options');
+    ringDurationInput = document.getElementById('alarm-ring-duration');
+    pauseDurationInput = document.getElementById('alarm-pause-duration');
+    maxCyclesInput = document.getElementById('alarm-max-cycles');
+    ringOverrideCheckbox.addEventListener('change', updateRingOverrideVisibility);
 
     grid.querySelector('.tile-add').addEventListener('click', function () { openEditor(null); });
     document.getElementById('alarm-cancel').addEventListener('click', closeEditor);
@@ -302,5 +355,10 @@
     maybePreloadRingingBanner();
   }
 
-  window.alarmsTab = { init: init, render: render, rescheduleAll: rescheduleAll };
+  window.alarmsTab = {
+    init: init,
+    render: render,
+    rescheduleAll: rescheduleAll,
+    ringFromNativePending: ringAlarmFromNativePending
+  };
 })();

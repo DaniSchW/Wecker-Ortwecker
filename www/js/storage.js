@@ -5,7 +5,8 @@
     alarms: 'wo.alarms',
     timers: 'wo.timers',
     locationAlarms: 'wo.locationAlarms',
-    tabataPresets: 'wo.tabataPresets'
+    tabataPresets: 'wo.tabataPresets',
+    ringSettings: 'wo.ringSettings'
   };
 
   function readList(key) {
@@ -61,11 +62,35 @@
     };
   }
 
+  // Einzelnes Einstellungsobjekt (kein Store fuer Listen-Items) fuer die
+  // globalen Standardwerte des Dauerklingel-Verhaltens (siehe ringSettings.js).
+  function readObject(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.error('storage: konnte "' + key + '" nicht lesen', e);
+      return {};
+    }
+  }
+
+  function writeObject(key, obj) {
+    try {
+      localStorage.setItem(key, JSON.stringify(obj || {}));
+    } catch (e) {
+      console.error('storage: konnte "' + key + '" nicht schreiben', e);
+    }
+  }
+
   window.storage = {
     makeId: makeId,
     alarms: makeStore(KEYS.alarms),
     timers: makeStore(KEYS.timers),
     locationAlarms: makeStore(KEYS.locationAlarms),
-    tabataPresets: makeStore(KEYS.tabataPresets)
+    tabataPresets: makeStore(KEYS.tabataPresets),
+    ringSettings: {
+      get: function () { return readObject(KEYS.ringSettings); },
+      save: function (obj) { writeObject(KEYS.ringSettings, obj); }
+    }
   };
 })();

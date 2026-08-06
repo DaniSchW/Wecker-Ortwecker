@@ -163,6 +163,27 @@
         </div>
       </div>
 
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="alarm-ring-override-enabled" />
+          <span data-i18n="alarm.ringOverrideEnable">Eigene Klingel-Einstellungen verwenden</span>
+        </label>
+        <div id="alarm-ring-override-options" class="alarm-snooze-options" hidden>
+          <label class="field">
+            <span data-i18n="alarm.ringDurationLabel">Klingeldauer (Sekunden)</span>
+            <input type="number" id="alarm-ring-duration" min="10" max="300" step="5" />
+          </label>
+          <label class="field">
+            <span data-i18n="alarm.pauseDurationLabel">Pausendauer (Minuten)</span>
+            <input type="number" id="alarm-pause-duration" min="1" max="30" />
+          </label>
+          <label class="field">
+            <span data-i18n="alarm.maxCyclesLabel">Wiederholungszyklen</span>
+            <input type="number" id="alarm-max-cycles" min="1" max="10" />
+          </label>
+        </div>
+      </div>
+
       <div class="modal-actions tile-actions">
         <button type="button" id="alarm-delete" class="btn danger" data-i18n="alarm.delete" hidden>Löschen</button>
         <button type="button" id="alarm-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
@@ -354,6 +375,27 @@
         </div>
       </div>
 
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="loc-ring-override-enabled" />
+          <span data-i18n="alarm.ringOverrideEnable">Eigene Klingel-Einstellungen verwenden</span>
+        </label>
+        <div id="loc-ring-override-options" class="alarm-snooze-options" hidden>
+          <label class="field">
+            <span data-i18n="alarm.ringDurationLabel">Klingeldauer (Sekunden)</span>
+            <input type="number" id="loc-ring-duration" min="10" max="300" step="5" />
+          </label>
+          <label class="field">
+            <span data-i18n="alarm.pauseDurationLabel">Pausendauer (Minuten)</span>
+            <input type="number" id="loc-pause-duration" min="1" max="30" />
+          </label>
+          <label class="field">
+            <span data-i18n="alarm.maxCyclesLabel">Wiederholungszyklen</span>
+            <input type="number" id="loc-max-cycles" min="1" max="10" />
+          </label>
+        </div>
+      </div>
+
       <div class="modal-actions tile-actions">
         <button type="button" id="location-alarm-delete" class="btn danger" data-i18n="alarm.delete" hidden>Löschen</button>
         <button type="button" id="location-alarm-cancel" class="btn secondary" data-i18n="common.cancel">Abbrechen</button>
@@ -418,6 +460,23 @@
       <h2 data-i18n="settings.title">Einstellungen</h2>
 
       <div class="field">
+        <span data-i18n="settings.ringLabel">Klingelverhalten (Standardwerte)</span>
+        <p class="field-hint" data-i18n="settings.ringHint">Gilt für Standard-Wecker und Orts-Zeit-Wecker, sofern ein einzelner Alarm keine eigenen Werte verwendet.</p>
+        <label class="field">
+          <span data-i18n="settings.ringDurationLabel">Klingeldauer (Sekunden)</span>
+          <input type="number" id="settings-ring-duration" min="10" max="300" step="5" />
+        </label>
+        <label class="field">
+          <span data-i18n="settings.pauseDurationLabel">Pausendauer (Minuten)</span>
+          <input type="number" id="settings-pause-duration" min="1" max="30" />
+        </label>
+        <label class="field">
+          <span data-i18n="settings.maxCyclesLabel">Wiederholungszyklen</span>
+          <input type="number" id="settings-max-cycles" min="1" max="10" />
+        </label>
+      </div>
+
+      <div class="field">
         <span data-i18n="settings.backupLabel">Sicherung</span>
         <p class="field-hint" data-i18n="settings.backupHint">Sichert alle Wecker und Orts-Zeit-Wecker als Datei bzw. stellt sie daraus wieder her – unabhängig vom normalen App-Update, z. B. vor einer Neuinstallation.</p>
         <div class="tile-actions">
@@ -438,6 +497,7 @@
   <script src="js/i18n.js"></script>
   <script src="js/tabs.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/ringSettings.js"></script>
   <script src="js/notifications.js"></script>
   <script src="js/alarmSound.js"></script>
   <script src="js/ads.js"></script>

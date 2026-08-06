@@ -26,7 +26,7 @@ import org.json.JSONObject;
  * wurde - das ist der Pfad, über den die bestehende JS-Logik (geoTrigger.js/
  * locationAlarms.js, inkl. Wiederholungstyp- und Pendel-Zeitfenster-Prüfung)
  * weiterhin die volle Kontrolle behält, solange der Prozess lebt. Um
- * Doppelauslösungen zu vermeiden, prüft LocationAlarmNotifier deshalb
+ * Doppelauslösungen zu vermeiden, prüft AlarmNotifier deshalb
  * LocationAlarmBridgePlugin.isJsPipelineLoaded(), bevor er selbst aktiv wird.
  */
 public class WeckerOrtsweckerApplication extends Application {
@@ -62,7 +62,7 @@ public class WeckerOrtsweckerApplication extends Application {
                     String payload = intent.getStringExtra(EXTRA_GEOFENCE_PAYLOAD);
                     if (payload == null || payload.isEmpty()) return;
                     try {
-                        LocationAlarmNotifier.handleGeofenceTransition(context, new JSONObject(payload));
+                        AlarmNotifier.handleGeofenceTransition(context, new JSONObject(payload));
                     } catch (Exception e) {
                         Log.e(TAG, "Geofence-Transition-Payload konnte nicht verarbeitet werden", e);
                     }

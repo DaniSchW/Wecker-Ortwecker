@@ -366,6 +366,14 @@ Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
    `START_STICKY`) einen erzwungenen Prozess-Kill unter Speicherdruck -
    inkl. Google-Play-Formular-Begründung für
    `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.
+9. Ergänzung "Echtes Dauerklingeln" (siehe Abschnitt oben) auf einem
+   echten Gerät verifizieren, für BEIDE Alarm-Arten: Klingel-Pause-Zyklen
+   laufen wie konfiguriert ab (globale Standardwerte UND Pro-Alarm-
+   Override testen), Bildschirm wacht bei jeder Zyklus-Wiederaufnahme
+   zuverlässig wieder auf, "Verpasst"-Benachrichtigung erscheint nach dem
+   letzten erfolglosen Zyklus, Swipe-zum-Stoppen beendet den kompletten
+   Vorgang (nicht nur den aktuellen Zyklus) zuverlässig in jeder Phase
+   (Klingeln UND Pause).
 
 **Werbung/Monetarisierung (Phase 6)**
 7. Echtes AdMob-Konto anlegen, App registrieren, echte App-ID/Ad-Unit-ID in
@@ -849,6 +857,100 @@ sich OEM-spezifische Batteriesparfunktionen (die teils auch mit erteilter
 Akku-Optimierung-Ausnahme noch eigene, App-spezifische Schalter kennen,
 z. B. MIUIs "Autostart") trotz aller hier implementierten Maßnahmen
 verhalten.
+
+### Echtes Dauerklingeln statt einmaliger Benachrichtigung (beide Alarm-Arten)
+
+Der Vollbild-Alarm-Mechanismus (siehe oben) klang bisher, sobald der native
+`AlarmRingService` einmal gestartet war, unbegrenzt weiter, bis der Nutzer
+per Swipe stoppte - und existierte bislang NUR für den Orts-Zeit-Wecker,
+nicht für den Standard-Wecker (der weiterhin nur über
+`@capacitor/local-notifications` als einmalige Benachrichtigung mit
+Kanal-Standardton auslöste). Diese Ergänzung macht beide Alarm-Arten zu
+einem echten Wecker-Erlebnis:
+
+- **Klingel-Pause-Zyklen**: Klingelt (Ton + Vibration je nach Einstellung)
+  für eine konfigurierbare Klingeldauer (Standard 60 s), pausiert dann für
+  eine konfigurierbare Pausendauer (Standard 5 min), klingelt danach
+  erneut - bis zu einer konfigurierbaren Anzahl Zyklen (Standard 3),
+  danach endgültiges Verstummen ohne weitere Versuche.
+- **Native, eigenständige Zeitsteuerung**: Der komplette Ablauf (nicht nur
+  Ton/Vibration selbst) wird in `AlarmRingService.java` über einen
+  eigenen `Handler`-Timer verwaltet - JS-Timer würden in einer im
+  Hintergrund gedrosselten WebView unzuverlässig laufen, und die
+  Benachrichtigung selbst hat keinen eingebauten Wiederholungsmechanismus.
+- **Vollbild-Intent bei jeder Wiederaufnahme**: Bei jedem neuen
+  Klingel-Zyklus (ab dem zweiten) postet der Dienst die
+  Vollbild-Notification erneut (`AlarmNotifier.repost()`), damit der
+  Bildschirm zuverlässig wieder aufweckt, falls er während der Pause
+  ausgegangen ist - `setFullScreenIntent` ist der einzige von Android
+  sanktionierte Weg, das aus einem Service-/Hintergrundkontext heraus zu
+  tun (ein direkter `startActivity()`-Aufruf würde an Androids
+  Background-Activity-Start-Restriktionen scheitern).
+- **"Verpasst"-Benachrichtigung**: Nach dem letzten erfolglosen Zyklus
+  ersetzt der Dienst die Vollbild-Notification durch eine normale,
+  wegwischbare Benachrichtigung, damit der Nutzer auch später noch sieht,
+  dass ein Alarm ausgelöst (aber nicht bestätigt) wurde.
+- **Standard-Wecker jetzt ebenfalls über den Vollbild-Alarm-Mechanismus**:
+  `AlarmNotifier`/`AlarmRingService`/`MainActivity`/
+  `LocationAlarmBridgePlugin` wurden von "nur Orts-Zeit-Wecker" auf beide
+  Alarm-Arten generalisiert (neuer `kind`-Parameter, `"standard"` vs.
+  `"location"`) - `LocationAlarmNotifier.java` wurde dafür in
+  `AlarmNotifier.java` umbenannt. `alarms.js`s `handleFire()` (JS-Pipeline
+  lebt) und `ringAlarmFromNativePending()` (kalter Start über den
+  Vollbild-Intent) rufen jetzt denselben nativen Ring-Mechanismus wie der
+  Orts-Zeit-Wecker.
+- **Auf nativer Plattform IMMER über den nativen Dienst** - unabhängig
+  davon, ob die App gerade sichtbar ist. Vorher lief der Orts-Zeit-Wecker
+  im Vordergrund noch über die Web-Audio-Umsetzung (`alarmSound.js`, ohne
+  Zyklen); das hätte das neue Klingel-Pause-Verhalten im Vordergrund
+  inkonsistent gemacht. Die Web-Audio-Umsetzung ist jetzt ausschließlich
+  der Fallback für die Browser-Vorschau (kein Capacitor-Bridge vorhanden).
+- **Einstellungen**: Neue globale Standardwerte im Einstellungen-Dialog
+  (Klingeldauer, Pausendauer, Wiederholungszyklen, siehe `ringSettings.js`
+  + `window.storage.ringSettings`), mit Möglichkeit zur Überschreibung pro
+  einzelnem Alarm (`ringOverrideEnabled` + eigene Werte, in beiden
+  Editor-Modals als ausklappbarer Block wie die bestehenden
+  Schlummern-/Pendel-Optionen). `ringSettings.resolveForAlarm(alarm)`
+  ermittelt die tatsächlich zu verwendenden Werte.
+- **Killed-Process-Pfad (nur Orts-Zeit-Wecker)**: Die drei Werte werden
+  jetzt auch in den Geofence-`payload` eingebettet (siehe
+  `backgroundGeofence.js`), damit der rein native Empfänger
+  (`WeckerOrtsweckerApplication`/`AlarmNotifier.handleGeofenceTransition`)
+  sie auch ohne laufende JS-Pipeline kennt. Für den Standard-Wecker gibt
+  es weiterhin KEINEN entsprechenden rein nativen Auslösepfad - trifft der
+  Alarm bei vollständig beendetem Prozess ein, bleibt es bei der
+  einmaligen Benachrichtigung mit Kanal-Standardton ohne Zyklen (dieselbe,
+  bereits an anderer Stelle dokumentierte Einschränkung wie zuvor beim
+  Orts-Zeit-Wecker vor dessen Vollbild-Alarm-Umbau - eine Lösung dafür
+  würde einen eigenen `BroadcastReceiver`-Bridge-Mechanismus für
+  `@capacitor/local-notifications` erfordern, analog zu
+  `WeckerOrtsweckerApplication` für Geofencing, was hier bewusst nicht
+  Teil dieser Ergänzung war).
+- **Race-Vermeidung beim kalten Start**: `consumePendingAlarm()` ist ein
+  einmalig konsumierbarer nativer Aufruf - würden sowohl `alarms.js` als
+  auch `locationAlarms.js` ihn selbst aufrufen, bekäme nur eines der
+  beiden Module die Daten. Die Verteilung läuft daher zentral in `app.js`
+  anhand von `pending.kind`, ebenso die `alarmExpired`-Event-Verteilung.
+- **Kein doppeltes Auslösen bei Zyklus-Wiederaufnahme**: Da
+  `AlarmNotifier.repost()` bei jedem neuen Zyklus erneut denselben
+  Vollbild-Intent feuert, würde `MainActivity.onNewIntent()` ohne
+  Gegenmaßnahme auch die Zustands-Buchhaltung (`consumed`,
+  `lastTriggeredAt`) bei jedem Zyklus erneut ausführen -
+  `ringing.isActive()`/`locationRinging.isActive()` verhindern das, indem
+  `ringAlarmFromNativePending()` sofort zurückkehrt, wenn das Overlay für
+  diesen Alarm bereits sichtbar ist.
+
+**Getestet** per Playwright (gemockte native Brücke): globale
+Ring-Einstellungen werden korrekt gespeichert/geladen; ein Alarm mit
+eigenen Klingel-Einstellungen speichert diese korrekt und
+`ringFullScreenAlarm()` verwendet sie statt der globalen Standardwerte
+(für Standard-Wecker UND Orts-Zeit-Wecker); ein simuliertes
+`alarmExpired`-Event schließt ein offenes Overlay automatisch. **Nicht
+verifizierbar in dieser Umgebung**: die tatsächliche
+Handler-Timer-Ablaufsteuerung in `AlarmRingService` selbst (Zyklen/Pausen
+über mehrere Minuten, Bildschirm-Aufwecken bei Wiederaufnahme) - das lässt
+sich nur auf einem echten Gerät über die volle Klingeldauer/Pausendauer
+hinweg beobachten.
 
 ## Entwicklung
 

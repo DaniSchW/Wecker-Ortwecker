@@ -12,6 +12,11 @@
 
   "settings.open": "Settings",
   "settings.title": "Settings",
+  "settings.ringLabel": "Ring behavior (defaults)",
+  "settings.ringHint": "Applies to alarms and location alarms unless an individual alarm uses its own values.",
+  "settings.ringDurationLabel": "Ring duration (seconds)",
+  "settings.pauseDurationLabel": "Pause duration (minutes)",
+  "settings.maxCyclesLabel": "Repeat cycles",
   "settings.backupLabel": "Backup",
   "settings.backupHint": "Back up all alarms and location alarms to a file, or restore them from one – independent of the normal app update process, e.g. before a reinstall.",
   "settings.export": "Back up alarms",
@@ -57,6 +62,10 @@
   "alarm.snoozeMinutes20": "20 minutes",
   "alarm.snoozeMinutes30": "30 minutes",
   "alarm.snoozedNotificationBody": "Triggered again after snooze",
+  "alarm.ringOverrideEnable": "Use custom ring settings",
+  "alarm.ringDurationLabel": "Ring duration (seconds)",
+  "alarm.pauseDurationLabel": "Pause duration (minutes)",
+  "alarm.maxCyclesLabel": "Repeat cycles",
 
   "locationAlarm.empty": "No location alarms yet. Tap + to add one.",
   "locationAlarm.add": "Add location alarm",

@@ -64,7 +64,7 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     // Explizit (nicht nur transitiv über Plugin-Module) für NotificationCompat/
     // NotificationManagerCompat/ServiceCompat im Vollbild-Alarm-Code
-    // (LocationAlarmNotifier/AlarmRingService) - "implementation" bei anderen
+    // (AlarmNotifier/AlarmRingService) - "implementation" bei anderen
     // Modulen ist nicht zwingend nach außen sichtbar.
     implementation "androidx.core:core:$androidxCoreVersion"
     // Ebenfalls explizit: @capgo/background-geolocation deklariert dies nur

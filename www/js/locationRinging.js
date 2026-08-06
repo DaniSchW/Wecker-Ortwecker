@@ -95,7 +95,7 @@
     }
   }
 
-  function stop() {
+  function close() {
     if (nativeAudioActive) {
       window.locationAlarmBridge.stopAlarmSound();
     } else {
@@ -106,11 +106,33 @@
     document.body.classList.remove('is-ringing');
     window.ads.hideRingingBanner();
     setAdFallback(false);
+  }
+
+  function stop() {
+    close();
     var alarm = activeAlarm;
     var cb = onStopCallback;
     activeAlarm = null;
     onStopCallback = null;
     if (cb) cb(alarm);
+  }
+
+  // Schließt das Overlay OHNE stop-Callback auszulösen, sofern es gerade
+  // für genau diesen Alarm sichtbar ist - aufgerufen, wenn AlarmRingService
+  // alle Klingel-Zyklen ohne Nutzer-Interaktion durchlaufen hat.
+  function closeIfActive(alarmId) {
+    if (!activeAlarm || activeAlarm.id !== alarmId) return;
+    close();
+    activeAlarm = null;
+    onStopCallback = null;
+  }
+
+  // Zeigt bereits das Overlay fuer genau diesen Alarm - relevant, damit ein
+  // erneuter Vollbild-Intent bei Wiederaufnahme nach einer Klingel-Pause
+  // (siehe AlarmRingService) nicht bei jedem Zyklus erneut die Zustands-
+  // Buchhaltung (consumed/lastTriggeredAt) durchlaeuft.
+  function isActive(alarmId) {
+    return !!(activeAlarm && activeAlarm.id === alarmId);
   }
 
   function init() {
@@ -127,5 +149,5 @@
     setupSwipe();
   }
 
-  window.locationRinging = { init: init, show: show, stop: stop };
+  window.locationRinging = { init: init, show: show, stop: stop, closeIfActive: closeIfActive, isActive: isActive };
 })();

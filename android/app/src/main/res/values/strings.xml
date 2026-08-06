@@ -9,14 +9,21 @@
          dauerhafte Hintergrund-Standort-Anzeige (Android-Pflicht ab API 26). -->
     <string name="capacitor_background_geolocation_notification_channel_name">Standort-Überwachung für Orts-Zeit-Wecker</string>
 
-    <!-- Vollbild-Alarm-Mechanismus des Orts-Zeit-Weckers (LocationAlarmNotifier/
-         AlarmRingService) - Texte für Fälle ohne eigenen Titel/Beschreibung
-         sowie für den Ton-/Vibrations-Hintergrunddienst. -->
+    <!-- Vollbild-Alarm-Mechanismus (AlarmNotifier/AlarmRingService), gilt für
+         Orts-Zeit-Wecker UND Standard-Wecker - Texte für Fälle ohne eigenen
+         Titel/Beschreibung sowie für den Ton-/Vibrations-Hintergrunddienst. -->
     <string name="location_alarm_default_title">Orts-Zeit-Wecker</string>
     <string name="location_alarm_notification_body">Orts-Zeit-Wecker ausgelöst</string>
-    <string name="location_alarm_ring_service_channel_name">Alarm-Ton (Orts-Zeit-Wecker)</string>
-    <string name="location_alarm_ring_service_channel_description">Läuft, solange ein Orts-Zeit-Wecker klingelt.</string>
+    <string name="alarm_default_title">Wecker</string>
+    <string name="alarm_notification_body">Wecker ausgelöst</string>
+    <string name="location_alarm_ring_service_channel_name">Alarm-Ton (Wecker &amp; Orts-Zeit-Wecker)</string>
+    <string name="location_alarm_ring_service_channel_description">Läuft, solange ein Alarm klingelt.</string>
     <string name="location_alarm_ring_service_notification_text">Alarm klingelt…</string>
+
+    <!-- Klingelzyklen-Ergänzung: bleibt nach dem letzten erfolglosen
+         Klingel-Zyklus (keine Nutzer-Interaktion) als normale, wegwischbare
+         Benachrichtigung stehen - siehe AlarmRingService.finishSession(). -->
+    <string name="alarm_missed_notification_suffix"> (verpasst)</string>
 
     <!-- GeofenceForegroundService: dauerhafte, dezente Notification, solange
          mindestens ein Orts-Zeit-Wecker aktiviert ist (zuverlässiger

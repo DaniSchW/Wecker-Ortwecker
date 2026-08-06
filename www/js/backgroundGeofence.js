@@ -84,7 +84,7 @@
                     // Pro Region die Setup-weiten Einstellungen (beide an)
                     // gezielt auf die konfigurierte Auslöse-Richtung
                     // einschränken - relevant vor allem für den rein
-                    // nativen Killed-Process-Pfad (LocationAlarmNotifier),
+                    // nativen Killed-Process-Pfad (AlarmNotifier),
                     // der keine JS-Logik zur Richtungsprüfung mehr hat.
                     notifyOnEntry: alarm.trigger !== 'departure',
                     notifyOnExit: alarm.trigger === 'departure',
@@ -92,16 +92,22 @@
                     // Transition unverändert mitgeliefert (siehe
                     // GeofenceStore.buildTransitionData im Plugin) - so
                     // kennt die native Vollbild-Alarm-Bridge (siehe
-                    // LocationAlarmNotifier) Titel/Beschreibung/Ton-
+                    // AlarmNotifier) Titel/Beschreibung/Ton-
                     // Einstellung auch dann, wenn der App-Prozess beim
                     // Auslösen bereits beendet war und kein JS läuft.
-                    payload: {
-                      alarmId: alarm.id,
-                      locationId: loc.id,
-                      title: alarm.title || '',
-                      description: alarm.description || '',
-                      sound: alarm.sound || 'both'
-                    }
+                    payload: (function () {
+                      var ring = window.ringSettings.resolveForAlarm(alarm);
+                      return {
+                        alarmId: alarm.id,
+                        locationId: loc.id,
+                        title: alarm.title || '',
+                        description: alarm.description || '',
+                        sound: alarm.sound || 'both',
+                        ringDurationSec: ring.ringDurationSec,
+                        pauseDurationSec: ring.pauseDurationSec,
+                        maxCycles: ring.maxCycles
+                      };
+                    })()
                   })
                   .catch(function (err) {
                     console.error('backgroundGeofence: addGeofence fehlgeschlagen', alarm.id, loc.id, err);

@@ -12,6 +12,11 @@
 
   "settings.open": "Einstellungen",
   "settings.title": "Einstellungen",
+  "settings.ringLabel": "Klingelverhalten (Standardwerte)",
+  "settings.ringHint": "Gilt für Standard-Wecker und Orts-Zeit-Wecker, sofern ein einzelner Alarm keine eigenen Werte verwendet.",
+  "settings.ringDurationLabel": "Klingeldauer (Sekunden)",
+  "settings.pauseDurationLabel": "Pausendauer (Minuten)",
+  "settings.maxCyclesLabel": "Wiederholungszyklen",
   "settings.backupLabel": "Sicherung",
   "settings.backupHint": "Sichert alle Wecker und Orts-Zeit-Wecker als Datei bzw. stellt sie daraus wieder her – unabhängig vom normalen App-Update, z. B. vor einer Neuinstallation.",
   "settings.export": "Alarme sichern",
@@ -57,6 +62,10 @@
   "alarm.snoozeMinutes20": "20 Minuten",
   "alarm.snoozeMinutes30": "30 Minuten",
   "alarm.snoozedNotificationBody": "Erneut ausgelöst nach dem Schlummern",
+  "alarm.ringOverrideEnable": "Eigene Klingel-Einstellungen verwenden",
+  "alarm.ringDurationLabel": "Klingeldauer (Sekunden)",
+  "alarm.pauseDurationLabel": "Pausendauer (Minuten)",
+  "alarm.maxCyclesLabel": "Wiederholungszyklen",
 
   "locationAlarm.empty": "Noch keine Orts-Zeit-Wecker. Tippe auf + zum Hinzufügen.",
   "locationAlarm.add": "Orts-Zeit-Wecker hinzufügen",

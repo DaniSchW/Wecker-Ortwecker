@@ -12,7 +12,11 @@ import com.getcapacitor.PluginHandle;
 
 public class MainActivity extends BridgeActivity {
 
-    static final String ACTION_OPEN_LOCATION_ALARM = "app.weckerundort.mobile.action.OPEN_LOCATION_ALARM";
+    // Wird fuer BEIDE Alarm-Arten verwendet (Standard-Wecker und
+    // Orts-Zeit-Wecker, siehe EXTRA_KIND) - der Name blieb bewusst allgemein
+    // gehalten, obwohl er urspruenglich nur fuer Orts-Zeit-Wecker galt.
+    static final String ACTION_OPEN_ALARM = "app.weckerundort.mobile.action.OPEN_ALARM";
+    static final String EXTRA_KIND = "kind";
     static final String EXTRA_ALARM_ID = "alarmId";
     static final String EXTRA_LOCATION_ID = "locationId";
     static final String EXTRA_TITLE = "title";
@@ -41,19 +45,20 @@ public class MainActivity extends BridgeActivity {
 
     /**
      * Reagiert auf einen Start/Neustart der Activity über den Vollbild-
-     * Intent einer Orts-Zeit-Wecker-Benachrichtigung (siehe
-     * LocationAlarmNotifier). Setzt die zum Anzeigen über dem Sperr-
-     * bildschirm nötigen Fenster-Flags NUR in diesem Fall - ein normaler
-     * App-Start bleibt unverändert.
+     * Intent einer Alarm-Benachrichtigung (siehe AlarmNotifier, gilt für
+     * Standard-Wecker UND Orts-Zeit-Wecker). Setzt die zum Anzeigen über dem
+     * Sperrbildschirm nötigen Fenster-Flags NUR in diesem Fall - ein
+     * normaler App-Start bleibt unverändert.
      */
     private void handleAlarmIntent(Intent intent, boolean activityAlreadyRunning) {
-        if (intent == null || !ACTION_OPEN_LOCATION_ALARM.equals(intent.getAction())) {
+        if (intent == null || !ACTION_OPEN_ALARM.equals(intent.getAction())) {
             return;
         }
 
         applyLockScreenFlags();
 
         JSObject data = new JSObject();
+        data.put("kind", intent.getStringExtra(EXTRA_KIND));
         data.put("alarmId", intent.getStringExtra(EXTRA_ALARM_ID));
         data.put("locationId", intent.getStringExtra(EXTRA_LOCATION_ID));
         data.put("title", intent.getStringExtra(EXTRA_TITLE));

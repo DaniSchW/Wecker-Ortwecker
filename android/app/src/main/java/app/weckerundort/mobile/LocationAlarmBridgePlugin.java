@@ -14,20 +14,24 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
- * JS-Brücke für den Vollbild-Alarm-Mechanismus des Orts-Zeit-Weckers (siehe
- * www/js/locationAlarms.js, www/js/locationRinging.js). Ergänzt
- * @capacitor/local-notifications um genau die Funktionen, die dieses Plugin
- * nicht anbietet: setFullScreenIntent(), unabhängige Ton-/Vibrations-
- * Steuerung über den Alarm-Lautstärke-Kanal, und die Android-14-Berechtigung
+ * JS-Brücke für den Vollbild-Alarm-Mechanismus - gilt für BEIDE Alarm-Arten
+ * (Standard-Wecker: www/js/alarms.js, www/js/ringing.js; Orts-Zeit-Wecker:
+ * www/js/locationAlarms.js, www/js/locationRinging.js), unterschieden über
+ * den "kind"-Parameter. Ergänzt @capacitor/local-notifications um genau die
+ * Funktionen, die dieses Plugin nicht anbietet: setFullScreenIntent(),
+ * unabhängige Ton-/Vibrations-/Dauerklingel-Steuerung über den
+ * Alarm-Lautstärke-Kanal, und die Android-14-Berechtigung
  * USE_FULL_SCREEN_INTENT.
  */
 @CapacitorPlugin(name = "LocationAlarmBridge")
 public class LocationAlarmBridgePlugin extends Plugin {
 
-    // Signalisiert LocationAlarmNotifier (rein nativer Geofence-Empfänger),
-    // ob die JS-Pipeline in diesem Prozess bereits läuft - falls ja, überlässt
-    // ihm der native Pfad die Entscheidung, um Doppelauslösungen zu
-    // vermeiden (siehe Kommentar in LocationAlarmNotifier).
+    // Signalisiert AlarmNotifier (rein nativer Geofence-Empfänger), ob die
+    // JS-Pipeline in diesem Prozess bereits läuft - falls ja, überlässt ihm
+    // der native Pfad die Entscheidung, um Doppelauslösungen zu vermeiden
+    // (siehe Kommentar in AlarmNotifier). Wird außerdem von
+    // AlarmRingService.finishSession() genutzt, um das Ende eines
+    // unbestätigten Klingel-Vorgangs an JS zu melden (siehe notifyAlarmExpired).
     private static volatile LocationAlarmBridgePlugin sActiveInstance;
 
     static boolean isJsPipelineLoaded() {
@@ -41,9 +45,10 @@ public class LocationAlarmBridgePlugin extends Plugin {
     }
 
     /**
-     * Löst den Vollbild-Alarm für einen Ort aus, während die App nicht im
-     * Vordergrund ist (Aufrufer: locationAlarms.js, nachdem die vollständige
-     * Wiederholungstyp-/Pendel-Zeitfenster-Prüfung bereits positiv war).
+     * Löst den Vollbild-Alarm aus, während die App nicht im Vordergrund ist
+     * (Aufrufer: alarms.js/locationAlarms.js, nachdem für Orts-Zeit-Wecker
+     * die vollständige Wiederholungstyp-/Pendel-Zeitfenster-Prüfung bereits
+     * positiv war).
      */
     @PluginMethod
     public void ringFullScreenAlarm(PluginCall call) {
@@ -52,22 +57,47 @@ public class LocationAlarmBridgePlugin extends Plugin {
             call.reject("alarmId fehlt");
             return;
         }
+        String kind = call.getString("kind", AlarmNotifier.KIND_LOCATION);
         String locationId = call.getString("locationId", "");
         String title = call.getString("title", "");
         String description = call.getString("description", "");
         String sound = call.getString("sound", "both");
         Boolean enter = call.getBoolean("enter", true);
+        Integer ringDurationSec = call.getInt("ringDurationSec", 60);
+        Integer pauseDurationSec = call.getInt("pauseDurationSec", 300);
+        Integer maxCycles = call.getInt("maxCycles", 3);
 
-        LocationAlarmNotifier.postAlarmNotification(
+        AlarmNotifier.postAlarmNotification(
             getContext(),
+            kind,
             alarmId,
             locationId,
             title,
             description,
             sound,
-            enter != null ? enter : true
+            enter != null ? enter : true,
+            ringDurationSec != null ? ringDurationSec : 60,
+            pauseDurationSec != null ? pauseDurationSec : 300,
+            maxCycles != null ? maxCycles : 3
         );
         call.resolve();
+    }
+
+    /**
+     * Meldet an JS, dass ein Klingel-Vorgang alle Zyklen ohne Nutzer-
+     * Interaktion durchlaufen hat und endgültig verstummt ist - aufgerufen
+     * von AlarmRingService.finishSession() (nicht Instanz-gebunden, da der
+     * Service kein Plugin ist). Ohne aktive JS-Pipeline (sActiveInstance
+     * null) gibt es niemanden, der das Overlay noch schließen müsste.
+     */
+    static void notifyAlarmExpired(String kind, String alarmId, String locationId) {
+        LocationAlarmBridgePlugin instance = sActiveInstance;
+        if (instance == null) return;
+        JSObject data = new JSObject();
+        data.put("kind", kind);
+        data.put("alarmId", alarmId);
+        if (locationId != null) data.put("locationId", locationId);
+        instance.notifyListeners("alarmExpired", data);
     }
 
     /** Beendet den nativen Ton-/Vibrations-Dienst (Swipe-zum-Stoppen im Overlay). */

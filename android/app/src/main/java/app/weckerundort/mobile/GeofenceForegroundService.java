@@ -85,7 +85,7 @@ public class GeofenceForegroundService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.geofence_service_notification_title))
             .setContentText(getString(R.string.geofence_service_notification_text))
-            .setSmallIcon(LocationAlarmNotifier.smallIconRes(this))
+            .setSmallIcon(AlarmNotifier.smallIconRes(this))
             .setOngoing(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

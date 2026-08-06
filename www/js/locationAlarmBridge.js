@@ -18,19 +18,27 @@
   }
 
   // Löst den Vollbild-Alarm nativ aus (Notification mit setFullScreenIntent
-  // + Start von AlarmRingService). Wird von locationAlarms.js nur aufgerufen,
-  // nachdem die vollständige Auslöse-Berechtigungsprüfung (Wiederholungstyp,
-  // Pendel-Zeitfenster) bereits positiv war.
-  function ringFullScreenAlarm(alarm, locationId, enter) {
+  // + Start von AlarmRingService, der den kompletten Klingeln-Pause-Zyklus
+  // eigenständig verwaltet, siehe AlarmRingService.java). Gilt für BEIDE
+  // Alarm-Arten - options.kind unterscheidet ("standard"|"location"). Wird
+  // von alarms.js/locationAlarms.js nur aufgerufen, nachdem für
+  // Orts-Zeit-Wecker die vollständige Auslöse-Berechtigungsprüfung
+  // (Wiederholungstyp, Pendel-Zeitfenster) bereits positiv war.
+  function ringFullScreenAlarm(options) {
     if (!isNative() || !plugin()) return Promise.resolve();
+    var ring = window.ringSettings.resolveForAlarm(options.alarm);
     return plugin()
       .ringFullScreenAlarm({
-        alarmId: alarm.id,
-        locationId: locationId || '',
-        title: alarm.title || '',
-        description: alarm.description || '',
-        sound: alarm.sound || 'both',
-        enter: enter !== false
+        kind: options.kind,
+        alarmId: options.alarm.id,
+        locationId: options.locationId || '',
+        title: options.alarm.title || options.alarm.label || '',
+        description: options.alarm.description || '',
+        sound: options.alarm.sound || 'both',
+        enter: options.enter !== false,
+        ringDurationSec: ring.ringDurationSec,
+        pauseDurationSec: ring.pauseDurationSec,
+        maxCycles: ring.maxCycles
       })
       .catch(function (err) {
         console.error('locationAlarmBridge: ringFullScreenAlarm fehlgeschlagen', err);
@@ -106,12 +114,24 @@
     return plugin().requestIgnoreBatteryOptimizations().catch(function () {});
   }
 
+  // Feuert, wenn AlarmRingService alle Klingel-Zyklen ohne Nutzer-Interaktion
+  // durchlaufen hat (siehe AlarmRingService.finishSession()) - ringing.js/
+  // locationRinging.js schließen daraufhin ein noch offenes Overlay
+  // automatisch (siehe deren closeIfActive()).
+  function onAlarmExpired(callback) {
+    if (!isNative() || !plugin()) return;
+    plugin().addListener('alarmExpired', function (data) {
+      if (data && data.alarmId) callback(data);
+    });
+  }
+
   window.locationAlarmBridge = {
     isNative: isNative,
     ringFullScreenAlarm: ringFullScreenAlarm,
     stopAlarmSound: stopAlarmSound,
     consumePendingAlarm: consumePendingAlarm,
     onPendingAlarm: onPendingAlarm,
+    onAlarmExpired: onAlarmExpired,
     canUseFullScreenIntent: canUseFullScreenIntent,
     openFullScreenIntentSettings: openFullScreenIntentSettings,
     startGeofenceService: startGeofenceService,

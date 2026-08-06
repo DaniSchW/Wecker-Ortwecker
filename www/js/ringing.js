@@ -5,6 +5,12 @@
   var activeAlarm = null;
   var onStopCallback = null;
   var onSnoozeCallback = null;
+  // true, wenn Ton/Vibration für die aktuell klingelnde Anzeige vom nativen
+  // AlarmRingService übernommen werden (Vollbild-Alarm-Mechanismus) - dann
+  // darf alarmSound.js NICHT zusätzlich selbst Ton/Vibration starten
+  // (Doppel-Ton), und stop()/snooze() müssen stattdessen den nativen Dienst
+  // beenden (der sonst eigenständig über mehrere Klingel-Zyklen weiterliefe).
+  var nativeAudioActive = false;
 
   // Neutrale Marken-Fläche statt eines leeren/kaputt wirkenden Bereichs, wenn
   // keine Anzeige geladen werden konnte (analog locationRinging.js).
@@ -63,10 +69,11 @@
     window.addEventListener('touchend', pointerUp);
   }
 
-  function show(alarm, stopCallback, snoozeCallback) {
+  function show(alarm, stopCallback, snoozeCallback, options) {
     activeAlarm = alarm;
     onStopCallback = stopCallback;
     onSnoozeCallback = alarm.snoozeEnabled !== false ? snoozeCallback : null;
+    nativeAudioActive = !!(options && options.nativeAudio);
 
     titleEl.textContent = alarm.label && alarm.label.trim() ? alarm.label : window.i18n.t('alarm.defaultRingingTitle');
     timeEl.textContent = alarm.time || formatNow();
@@ -77,7 +84,10 @@
     overlay.classList.add('is-visible');
     document.body.classList.add('is-ringing');
 
-    window.alarmSound.start(alarm.sound || 'both');
+    // Läuft der native AlarmRingService bereits (Vollbild-Alarm-Pfad),
+    // übernimmt der Ton/Vibration inkl. Klingel-Pause-Zyklen - die
+    // Web-Audio-Umsetzung ist nur der Fallback für die Browser-Vorschau.
+    if (!nativeAudioActive) window.alarmSound.start(alarm.sound || 'both');
     if (window.ads.isNative()) {
       // Native Anzeige liegt als eigenständige Systemansicht ÜBER der
       // WebView und wird nicht über adSpace ins DOM eingehängt - adSpace
@@ -93,7 +103,12 @@
   }
 
   function close() {
-    window.alarmSound.stop();
+    if (nativeAudioActive) {
+      window.locationAlarmBridge.stopAlarmSound();
+    } else {
+      window.alarmSound.stop();
+    }
+    nativeAudioActive = false;
     overlay.classList.remove('is-visible');
     document.body.classList.remove('is-ringing');
     window.ads.hideRingingBanner();
@@ -121,6 +136,26 @@
     cb(alarm);
   }
 
+  // Schließt das Overlay OHNE stop-Callback auszulösen, sofern es gerade
+  // für genau diesen Alarm sichtbar ist - aufgerufen, wenn AlarmRingService
+  // alle Klingel-Zyklen ohne Nutzer-Interaktion durchlaufen hat (der native
+  // Dienst hat sich in diesem Fall bereits selbst beendet, stopAlarmSound()
+  // ist also nur noch ein harmloses No-Op).
+  function closeIfActive(alarmId) {
+    if (!activeAlarm || activeAlarm.id !== alarmId) return;
+    close();
+    activeAlarm = null;
+    onStopCallback = null;
+    onSnoozeCallback = null;
+  }
+
+  // Zeigt bereits das Overlay fuer genau diesen Alarm - relevant, damit ein
+  // erneuter Vollbild-Intent bei Wiederaufnahme nach einer Klingel-Pause
+  // (siehe AlarmRingService) nicht bei jedem Zyklus erneut show() aufruft.
+  function isActive(alarmId) {
+    return !!(activeAlarm && activeAlarm.id === alarmId);
+  }
+
   function init() {
     overlay = document.getElementById('ringing-overlay');
     adSpace = document.getElementById('ringing-ad');
@@ -137,5 +172,5 @@
     setupSwipe();
   }
 
-  window.ringing = { init: init, show: show, stop: stop };
+  window.ringing = { init: init, show: show, stop: stop, closeIfActive: closeIfActive, isActive: isActive };
 })();
