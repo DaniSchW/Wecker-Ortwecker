@@ -95,4 +95,22 @@
          Release-Checkliste). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Bugfix: Wecker feuerte auf Geräten mit Android 12+ nicht zuverlässig
+         (insb. nach längerer Inaktivität/Doze, z. B. über Nacht). Ursache:
+         @capacitor/local-notifications prüft intern
+         AlarmManager.canScheduleExactAlarms() - ohne diese Berechtigung
+         weicht es auf einen NICHT exakten, NICHT Doze-umgehenden Alarm aus
+         (AlarmManager.set() statt setExactAndAllowWhileIdle()), der um
+         Stunden verzögert oder erst beim nächsten Wartungsfenster feuern
+         kann. Ab targetSdk 34 wird SCHEDULE_EXACT_ALARM nicht mehr
+         automatisch gewährt (Nutzer müsste es manuell in den Einstellungen
+         freigeben) - USE_EXACT_ALARM dagegen wird für Apps, die tatsächlich
+         Wecker-/Erinnerungsfunktionalität anbieten (wie diese hier), ohne
+         Nutzerinteraktion automatisch gewährt und ist laut Google-Play-
+         Richtlinien genau für diesen Anwendungsfall vorgesehen. Siehe auch
+         alarms.js/timers.js: allowWhileIdle:true in den Schedule-Objekten,
+         damit selbst der (durch diese Berechtigung nun eigentlich nicht mehr
+         nötige) Fallback-Pfad des Plugins Doze umgehen würde. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 </manifest>

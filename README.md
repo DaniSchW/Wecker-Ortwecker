@@ -952,6 +952,49 @@ Handler-Timer-Ablaufsteuerung in `AlarmRingService` selbst (Zyklen/Pausen
 sich nur auf einem echten Gerät über die volle Klingeldauer/Pausendauer
 hinweg beobachten.
 
+### Bugfix: Wecker feuerte nicht zuverlässig (fehlende Exact-Alarm-Berechtigung)
+
+Gemeldeter Vorfall: Ein Wecker löste über Nacht nicht aus (Gerät hatte
+lediglich den Flugzeugmodus aktiviert). Ursachenanalyse:
+
+- `@capacitor/local-notifications` prüft intern
+  `AlarmManager.canScheduleExactAlarms()`, bevor es einen Alarm plant. Ist
+  das nicht erlaubt, weicht es auf einen NICHT exakten Alarm
+  (`AlarmManager.set()`) aus, der von Android beliebig verzögert werden
+  kann - insbesondere im Doze-Modus (Bildschirm aus, Gerät liegt länger
+  still, z. B. über Nacht), wo er erst beim nächsten System-
+  Wartungsfenster feuert. Das kann mehrere Stunden dauern und damit einen
+  morgendlichen Wecker praktisch verpassen lassen.
+- Ab `targetSdk` 34 (wir bauen mit 36, siehe `variables.gradle`) wird die
+  dafür nötige Berechtigung `SCHEDULE_EXACT_ALARM` NICHT mehr automatisch
+  gewährt - der Nutzer müsste sie manuell in den Systemeinstellungen
+  freigeben. Das Manifest deklarierte bislang gar keine der beiden
+  Exact-Alarm-Berechtigungen.
+- Fix: `USE_EXACT_ALARM` im Manifest ergänzt - diese Berechtigung wird
+  (anders als `SCHEDULE_EXACT_ALARM`) ohne Nutzerinteraktion automatisch
+  gewährt, ist laut Google-Play-Richtlinien aber ausdrücklich für Apps mit
+  echter Wecker-/Erinnerungsfunktionalität vorgesehen (wie diese App).
+  Zusätzlich `allowWhileIdle: true` in allen `Notify.schedule()`-Aufrufen
+  (`alarms.js`: Hauptwecker + Schlummern; `timers.js`: Timer-Ende) ergänzt,
+  damit auch ein etwaiger Fallback-Pfad des Plugins Doze umgeht.
+- **Flugzeugmodus selbst ist technisch NICHT die Ursache** - geplante
+  Alarme sind reine Zeitgeber (`AlarmManager`), unabhängig von Funkstatus.
+  Der Zusammenhang ist indirekt: Ein Gerät, das über Nacht ohnehin keine
+  Netzwerkaktivität hat, verbringt typischerweise mehr Zeit im Doze-Modus
+  (Bildschirm aus, lange Inaktivität), wodurch sich genau dieser
+  vorbestehende Konfigurationsfehler bemerkbar macht.
+
+**Bekannte, verbleibende Einschränkung für den Standard-Wecker** (nicht
+Teil dieses Fixes, deutlich größerer Umbau nötig): Anders als der
+Orts-Zeit-Wecker (siehe `WeckerOrtsweckerApplication`) hat der
+Standard-Wecker keinen rein nativen Auslösepfad für den Fall, dass der
+App-Prozess beim Ausloese-Zeitpunkt komplett beendet ist - dann feuert nur
+die einmalige, native `@capacitor/local-notifications`-Benachrichtigung
+mit Kanal-Standardton, OHNE das native Dauerklingeln (Zyklen/Pause,
+Vollbild-Aufwecken). Mit dem Exact-Alarm-Fix oben feuert diese
+Benachrichtigung nun aber zuverlässig zum korrekten Zeitpunkt statt
+potenziell verzögert.
+
 ## Entwicklung
 
 ```bash

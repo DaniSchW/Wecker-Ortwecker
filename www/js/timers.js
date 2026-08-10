@@ -134,7 +134,9 @@
       title: timer.label || window.i18n.t('timer.defaultLabel'),
       body: window.i18n.t('timer.done'),
       channelId: 'alarm_both',
-      schedule: { at: new Date(timer.endAt) },
+      // allowWhileIdle: siehe alarms.js - verhindert Verzoegerung durch
+      // Doze, falls das Geraet waehrend des Timers laengere Zeit inaktiv ist.
+      schedule: { at: new Date(timer.endAt), allowWhileIdle: true },
       extra: { type: 'timer', timerId: timer.id }
     }]);
   }

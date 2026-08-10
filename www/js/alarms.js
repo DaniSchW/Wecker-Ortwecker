@@ -174,7 +174,13 @@
         title: alarm.label || window.i18n.t('alarm.defaultRingingTitle'),
         body: alarm.time,
         channelId: channelId,
-        schedule: { at: window.Notify.nextOccurrence(alarm.time, null) },
+        // allowWhileIdle: der Wecker muss auch dann puenktlich ausloesen,
+        // wenn das Geraet zum Ausloesezeitpunkt im Doze-Modus ist (z.B.
+        // ueber Nacht, Bildschirm aus, lange Inaktivitaet) - ohne dieses
+        // Flag kann das Plugin (bzw. dessen Fallback ohne Exact-Alarm-
+        // Berechtigung) den Alarm um Stunden verzoegern oder erst beim
+        // naechsten System-Wartungsfenster ausloesen.
+        schedule: { at: window.Notify.nextOccurrence(alarm.time, null), allowWhileIdle: true },
         extra: { type: 'alarm', alarmId: alarm.id }
       });
     } else {
@@ -188,7 +194,8 @@
           channelId: channelId,
           schedule: {
             on: { weekday: window.Notify.toCapacitorWeekday(day), hour: parseInt(alarm.time.split(':')[0], 10), minute: parseInt(alarm.time.split(':')[1], 10) },
-            repeats: true
+            repeats: true,
+            allowWhileIdle: true
           },
           extra: { type: 'alarm', alarmId: alarm.id }
         });
@@ -256,7 +263,7 @@
       title: alarm.label || window.i18n.t('alarm.defaultRingingTitle'),
       body: window.i18n.t('alarm.snoozedNotificationBody'),
       channelId: window.Notify.channelFor(alarm.sound),
-      schedule: { at: new Date(Date.now() + minutes * 60000) },
+      schedule: { at: new Date(Date.now() + minutes * 60000), allowWhileIdle: true },
       extra: { type: 'alarm', alarmId: alarm.id }
     }]);
     alarm.snoozeNotificationId = id;
