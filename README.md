@@ -984,16 +984,48 @@ lediglich den Flugzeugmodus aktiviert). Ursachenanalyse:
   (Bildschirm aus, lange Inaktivität), wodurch sich genau dieser
   vorbestehende Konfigurationsfehler bemerkbar macht.
 
-**Bekannte, verbleibende Einschränkung für den Standard-Wecker** (nicht
-Teil dieses Fixes, deutlich größerer Umbau nötig): Anders als der
-Orts-Zeit-Wecker (siehe `WeckerOrtsweckerApplication`) hat der
-Standard-Wecker keinen rein nativen Auslösepfad für den Fall, dass der
-App-Prozess beim Ausloese-Zeitpunkt komplett beendet ist - dann feuert nur
-die einmalige, native `@capacitor/local-notifications`-Benachrichtigung
-mit Kanal-Standardton, OHNE das native Dauerklingeln (Zyklen/Pause,
-Vollbild-Aufwecken). Mit dem Exact-Alarm-Fix oben feuert diese
-Benachrichtigung nun aber zuverlässig zum korrekten Zeitpunkt statt
-potenziell verzögert.
+### Bugfix: Wecker klingelte nur einmal statt in Schleife (App-Prozess beendet)
+
+Gemeldeter Vorfall: Der Wecker klingelt, aber nicht wie vorgesehen 60
+Sekunden in Schleife - es kommt nur einmal der (Kanal-Standard-)Ton. Erst
+nach dem Antippen der Push-Benachrichtigung setzt das eigentliche
+Dauerklingeln ein.
+
+Ursache: Anders als der Orts-Zeit-Wecker (siehe
+`WeckerOrtsweckerApplication`) hatte der Standard-Wecker bislang keinen
+rein nativen Auslösepfad für den Fall, dass der App-Prozess zum
+Auslöse-Zeitpunkt komplett beendet ist. In diesem Fall feuert nur die
+einmalige, native `@capacitor/local-notifications`-Benachrichtigung mit
+Kanal-Standardton - das native Dauerklingeln (Zyklen/Pause,
+Vollbild-Aufwecken über `AlarmRingService`) startet erst, sobald die App
+tatsächlich läuft (z. B. weil der Nutzer die Benachrichtigung antippt).
+
+Fix: `StandardAlarmReceiver` (neuer, `exported="false"` manifest-
+registrierter `BroadcastReceiver`) stellt einen zweiten, komplett
+eigenständig nativ verwalteten `AlarmManager`-Alarm (`alarms.js`'s
+`scheduleNativeBackupAlarm()`, verdrahtet über
+`LocationAlarmBridgePlugin.scheduleStandardAlarm()`/`cancelStandardAlarm()`)
+- parallel zur normalen `@capacitor/local-notifications`-Planung. Da
+Android manifest-registrierte `BroadcastReceiver` auch dann zustellt, wenn
+dafür ein frischer, minimaler Prozess gestartet werden muss, kann dieser
+Backup-Alarm direkt `AlarmNotifier.postAlarmNotification()` aufrufen und
+damit denselben, bereits vollständig implementierten
+Vollbild-/Dauerklingel-Mechanismus auslösen wie der Orts-Zeit-Wecker -
+unabhängig davon, ob der App-Prozess zum Auslöse-Zeitpunkt lief.
+`LocationAlarmBridgePlugin.isJsPipelineLoaded()` verhindert dabei eine
+doppelte Auslösung, falls die JS-Pipeline (und damit `alarms.js`'s
+`handleFire()`) den Alarm bereits selbst über den regulären Pfad
+verarbeitet. Wird bei Erstellung/Bearbeitung, Aktivieren/Deaktivieren,
+Löschen und Schlummern eines Weckers jeweils neu gestellt bzw. storniert.
+
+**Getestet** per Playwright (gemockte native Brücke): `scheduleStandardAlarm`
+wird beim Speichern eines einmaligen wie auch eines wiederholenden Weckers
+mit korrekten `hour`/`minute`/`weekdays`-Werten aufgerufen; Deaktivieren,
+Löschen und Schlummern rufen `cancelStandardAlarm()` bzw. erneut
+`scheduleStandardAlarm()` mit dem neuen Zeitpunkt auf. **Nicht
+verifizierbar in dieser Umgebung**: das tatsächliche Auslösen des
+Backup-Alarms durch `AlarmManager` bei komplett beendetem App-Prozess auf
+einem echten Gerät.
 
 ## Entwicklung
 

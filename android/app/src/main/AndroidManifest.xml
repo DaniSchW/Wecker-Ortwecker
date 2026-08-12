@@ -47,6 +47,17 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- Bugfix: Standard-Wecker klingelte bei komplett beendetem
+             App-Prozess nur einmalig (Kanal-Standardton der
+             @capacitor/local-notifications-Benachrichtigung) statt über
+             AlarmRingService in Schleife - siehe StandardAlarmReceiver.java.
+             Nur von unserem eigenen, nativ gestellten AlarmManager-Alarm
+             angesprochen (siehe LocationAlarmBridgePlugin.
+             scheduleStandardAlarm()), daher exported="false". -->
+        <receiver
+            android:name=".StandardAlarmReceiver"
+            android:exported="false" />
+
         <!-- Phase 6, @capacitor-community/admob. admob_app_id (strings.xml) ist
              aktuell Googles offizielle TEST-App-ID - vor Store-Release durch die
              echte AdMob-App-ID ersetzen (siehe README). -->

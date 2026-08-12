@@ -7,11 +7,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import org.json.JSONException;
 
 /**
  * JS-Brücke für den Vollbild-Alarm-Mechanismus - gilt für BEIDE Alarm-Arten
@@ -205,6 +207,80 @@ public class LocationAlarmBridgePlugin extends Plugin {
                 return;
             }
         }
+        call.resolve();
+    }
+
+    /**
+     * Stellt einen zweiten, rein nativ verwalteten AlarmManager-Alarm für
+     * einen Standard-Wecker, PARALLEL zur normalen @capacitor/
+     * local-notifications-Planung (unverändert weiterhin aktiv). Grund:
+     * Ist der App-Prozess beim Auslöse-Zeitpunkt komplett beendet, feuert
+     * bislang nur die einmalige System-Benachrichtigung des Plugins mit
+     * Kanal-Standardton, OHNE den nativen Dauerklingel-Mechanismus
+     * (AlarmRingService) - dessen Auslösung hing bisher komplett von der
+     * lebenden JS-Pipeline ab (siehe alarms.js's handleFire()). Dieser
+     * Backup-Alarm schließt genau diese Lücke, siehe StandardAlarmReceiver.
+     */
+    @PluginMethod
+    public void scheduleStandardAlarm(PluginCall call) {
+        String alarmId = call.getString("alarmId");
+        Long triggerAtMillis = call.getLong("triggerAtMillis");
+        if (alarmId == null || alarmId.isEmpty() || triggerAtMillis == null) {
+            call.reject("alarmId oder triggerAtMillis fehlt");
+            return;
+        }
+        String title = call.getString("title", "");
+        String description = call.getString("description", "");
+        String sound = call.getString("sound", "both");
+        int ringDurationSec = call.getInt("ringDurationSec", 60);
+        int pauseDurationSec = call.getInt("pauseDurationSec", 300);
+        int maxCycles = call.getInt("maxCycles", 3);
+        // Bewusst primitive int (nicht Integer): Intent.putExtra() hat sowohl
+        // eine int- als auch eine Serializable-Overload - mit einem
+        // boxed Integer würde der Compiler ohne Unboxing-Zwang die
+        // Serializable-Variante wählen, die getIntExtra() beim Empfänger
+        // NICHT findet (liefert dann still den Default-Wert 0 zurück).
+        int hour = call.getInt("hour", 0);
+        int minute = call.getInt("minute", 0);
+        JSArray weekdaysArray = call.getArray("weekdays");
+
+        Intent intent = new Intent(getContext(), StandardAlarmReceiver.class);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_ALARM_ID, alarmId);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_TITLE, title);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_DESCRIPTION, description);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_SOUND, sound);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_RING_DURATION_SEC, ringDurationSec);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_PAUSE_DURATION_SEC, pauseDurationSec);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_MAX_CYCLES, maxCycles);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_HOUR, hour);
+        intent.putExtra(StandardAlarmReceiver.EXTRA_MINUTE, minute);
+
+        if (weekdaysArray != null && weekdaysArray.length() > 0) {
+            int[] weekdays = new int[weekdaysArray.length()];
+            try {
+                for (int i = 0; i < weekdaysArray.length(); i++) {
+                    weekdays[i] = weekdaysArray.getInt(i);
+                }
+                intent.putExtra(StandardAlarmReceiver.EXTRA_WEEKDAYS, weekdays);
+            } catch (JSONException e) {
+                call.reject("weekdays ungültig", e);
+                return;
+            }
+        }
+
+        StandardAlarmReceiver.schedule(getContext(), intent, triggerAtMillis);
+        call.resolve();
+    }
+
+    /** Beendet den in scheduleStandardAlarm() gestellten Backup-Alarm (Wecker deaktiviert/gelöscht). */
+    @PluginMethod
+    public void cancelStandardAlarm(PluginCall call) {
+        String alarmId = call.getString("alarmId");
+        if (alarmId == null || alarmId.isEmpty()) {
+            call.reject("alarmId fehlt");
+            return;
+        }
+        StandardAlarmReceiver.cancel(getContext(), alarmId);
         call.resolve();
     }
 }

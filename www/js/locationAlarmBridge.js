@@ -125,6 +125,40 @@
     });
   }
 
+  // Stellt einen zweiten, rein nativ verwalteten Backup-Alarm für einen
+  // Standard-Wecker (siehe StandardAlarmReceiver.java) - läuft PARALLEL zur
+  // normalen @capacitor/local-notifications-Planung und sorgt dafür, dass
+  // der volle Dauerklingel-Mechanismus (AlarmRingService) auch dann
+  // ausgelöst wird, wenn der App-Prozess beim Auslöse-Zeitpunkt komplett
+  // beendet ist - ohne ihn würde nur die einmalige System-Benachrichtigung
+  // mit Kanal-Standardton erscheinen.
+  function scheduleStandardAlarm(options) {
+    if (!isNative() || !plugin()) return Promise.resolve();
+    var ring = window.ringSettings.resolveForAlarm(options.alarm);
+    return plugin()
+      .scheduleStandardAlarm({
+        alarmId: options.alarm.id,
+        triggerAtMillis: options.triggerAtMillis,
+        title: options.alarm.label || '',
+        description: '',
+        sound: options.alarm.sound || 'both',
+        ringDurationSec: ring.ringDurationSec,
+        pauseDurationSec: ring.pauseDurationSec,
+        maxCycles: ring.maxCycles,
+        hour: options.hour,
+        minute: options.minute,
+        weekdays: options.weekdays || []
+      })
+      .catch(function (err) {
+        console.error('locationAlarmBridge: scheduleStandardAlarm fehlgeschlagen', err);
+      });
+  }
+
+  function cancelStandardAlarm(alarmId) {
+    if (!isNative() || !plugin()) return Promise.resolve();
+    return plugin().cancelStandardAlarm({ alarmId: alarmId }).catch(function () {});
+  }
+
   window.locationAlarmBridge = {
     isNative: isNative,
     ringFullScreenAlarm: ringFullScreenAlarm,
@@ -136,6 +170,8 @@
     openFullScreenIntentSettings: openFullScreenIntentSettings,
     startGeofenceService: startGeofenceService,
     stopGeofenceService: stopGeofenceService,
+    scheduleStandardAlarm: scheduleStandardAlarm,
+    cancelStandardAlarm: cancelStandardAlarm,
     isIgnoringBatteryOptimizations: isIgnoringBatteryOptimizations,
     requestIgnoreBatteryOptimizations: requestIgnoreBatteryOptimizations
   };

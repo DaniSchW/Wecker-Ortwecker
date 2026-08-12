@@ -89,6 +89,7 @@
     } else {
       window.Notify.cancel(alarm.notificationIds || []);
       cancelSnooze(alarm);
+      window.locationAlarmBridge.cancelStandardAlarm(alarm.id);
     }
     render();
     maybePreloadRingingBanner();
@@ -159,6 +160,7 @@
     if (!alarm.enabled) {
       alarm.notificationIds = [];
       window.storage.alarms.upsert(alarm);
+      window.locationAlarmBridge.cancelStandardAlarm(alarm.id);
       return;
     }
 
@@ -205,6 +207,35 @@
     alarm.notificationIds = ids;
     window.storage.alarms.upsert(alarm);
     window.Notify.schedule(notifications);
+    scheduleNativeBackupAlarm(alarm);
+  }
+
+  // Stellt zusaetzlich zur normalen @capacitor/local-notifications-Planung
+  // (oben) einen zweiten, rein nativ verwalteten Backup-Alarm (siehe
+  // StandardAlarmReceiver.java) - dieser loest den vollen Vollbild-/
+  // Dauerklingel-Mechanismus auch dann aus, wenn der App-Prozess beim
+  // Ausloese-Zeitpunkt komplett beendet ist (siehe README, Bugfix-Abschnitt).
+  function scheduleNativeBackupAlarm(alarm) {
+    var hour = parseInt(alarm.time.split(':')[0], 10);
+    var minute = parseInt(alarm.time.split(':')[1], 10);
+    var triggerAtMillis;
+    var weekdays;
+    if (!alarm.days.length) {
+      triggerAtMillis = window.Notify.nextOccurrence(alarm.time, null).getTime();
+      weekdays = [];
+    } else {
+      triggerAtMillis = Math.min.apply(null, alarm.days.map(function (day) {
+        return window.Notify.nextOccurrence(alarm.time, day).getTime();
+      }));
+      weekdays = alarm.days.map(window.Notify.toCapacitorWeekday);
+    }
+    window.locationAlarmBridge.scheduleStandardAlarm({
+      alarm: alarm,
+      triggerAtMillis: triggerAtMillis,
+      hour: hour,
+      minute: minute,
+      weekdays: weekdays
+    });
   }
 
   function saveForm(evt) {
@@ -248,6 +279,7 @@
     if (alarm) {
       window.Notify.cancel(alarm.notificationIds || []);
       if (alarm.snoozeNotificationId) window.Notify.cancel([alarm.snoozeNotificationId]);
+      window.locationAlarmBridge.cancelStandardAlarm(alarm.id);
     }
     window.storage.alarms.remove(editingId);
     closeEditor();
@@ -257,17 +289,28 @@
 
   function handleSnooze(alarm) {
     var minutes = alarm.snoozeMinutes || 10;
+    var target = new Date(Date.now() + minutes * 60000);
     var id = window.Notify.nextId();
     window.Notify.schedule([{
       id: id,
       title: alarm.label || window.i18n.t('alarm.defaultRingingTitle'),
       body: window.i18n.t('alarm.snoozedNotificationBody'),
       channelId: window.Notify.channelFor(alarm.sound),
-      schedule: { at: new Date(Date.now() + minutes * 60000), allowWhileIdle: true },
+      schedule: { at: target, allowWhileIdle: true },
       extra: { type: 'alarm', alarmId: alarm.id }
     }]);
     alarm.snoozeNotificationId = id;
     window.storage.alarms.upsert(alarm);
+    // Ersetzt den Backup-Alarm (siehe scheduleNativeBackupAlarm) durch den
+    // neuen Schlummern-Zeitpunkt - keine Wochentag-Wiederholung, also
+    // einmalig (weekdays: []).
+    window.locationAlarmBridge.scheduleStandardAlarm({
+      alarm: alarm,
+      triggerAtMillis: target.getTime(),
+      hour: target.getHours(),
+      minute: target.getMinutes(),
+      weekdays: []
+    });
   }
 
   function onRingStopped(stoppedAlarm) {
