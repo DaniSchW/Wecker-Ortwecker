@@ -300,8 +300,15 @@ body {
   color: var(--color-accent);
 }
 
-/* Generic buttons */
+/* Generic buttons - Regeln gelten bewusst auch für <a class="btn">
+   (externe Links, z. B. Spenden-Buttons), daher display/text-decoration/
+   text-align hier statt der Browser-Vorgabe für <button> zu überlassen. */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
   border: none;
   border-radius: var(--radius-sm);
   padding: 10px 16px;
@@ -666,7 +673,8 @@ body {
   justify-content: flex-end;
 }
 
-.tile-actions button {
+.tile-actions button,
+.tile-actions .btn {
   flex: 1 1 auto;
   min-width: 100px;
 }
