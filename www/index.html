@@ -487,8 +487,133 @@
         <p id="settings-data-status" class="field-hint settings-data-status" role="status" aria-live="polite"></p>
       </div>
 
+      <div class="field">
+        <span data-i18n="settings.proLabel">Pro-Version</span>
+        <p id="settings-pro-status" class="field-hint" data-i18n="settings.proStatusFree">Gratis-Version mit Werbung beim Auslösen von Orts-Zeit-Weckern.</p>
+        <div class="tile-actions">
+          <button type="button" id="settings-pro-buy-btn" class="btn secondary" data-i18n="settings.proBuy">Pro-Version kaufen (1 €/Jahr)</button>
+          <button type="button" id="settings-pro-manage-btn" class="btn secondary" data-i18n="settings.proManage" hidden>Abo verwalten</button>
+        </div>
+        <p id="settings-pro-error" class="field-hint settings-data-status is-error" role="status" aria-live="polite" hidden></p>
+      </div>
+
+      <div class="field">
+        <span data-i18n="settings.legalLabel">Rechtliches</span>
+        <div class="tile-actions">
+          <button type="button" id="settings-impressum-btn" class="btn secondary" data-i18n="settings.impressum">Impressum</button>
+          <button type="button" id="settings-privacy-btn" class="btn secondary" data-i18n="settings.privacy">Datenschutz</button>
+        </div>
+      </div>
+
       <div class="modal-actions tile-actions">
         <button type="button" id="settings-close-btn" class="btn primary" data-i18n="common.close">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="legal-impressum-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-sheet">
+      <h2 data-i18n="settings.impressum">Impressum</h2>
+      <div class="legal-text">
+        <p>Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG, ehem. § 5 TMG):</p>
+
+        <h3>Diensteanbieter</h3>
+        <p>
+          Daniel Schwarz<br />
+          WEB Schwarz<br />
+          Meergässle 8<br />
+          89180 Berghülen
+        </p>
+
+        <h3>Kontakt</h3>
+        <p>
+          Telefon: 016096837183<br />
+          E-Mail: service@web-schwarz.de
+        </p>
+
+        <h3>Umsatzsteuer-ID</h3>
+        <p>Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz: DE447283655</p>
+
+        <h3>Gewerbeanmeldung</h3>
+        <p>Die Gewerbeerlaubnis nach § 14 bzw. § 55c GewO wurde am 15.10.2021 von folgender Stelle erteilt: Gemeinde Berghülen.</p>
+
+        <h3>Verantwortlich für den Inhalt</h3>
+        <p>Daniel Schwarz (Anschrift wie oben).</p>
+
+        <h3>Streitschlichtung</h3>
+        <p>Die Europäische Kommission stellte bis Juli 2025 eine Plattform zur Online-Streitbeilegung (OS) bereit; diese wurde von der EU-Kommission eingestellt. Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+      </div>
+      <div class="modal-actions tile-actions">
+        <button type="button" id="legal-impressum-close-btn" class="btn primary" data-i18n="common.close">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="legal-privacy-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-sheet">
+      <h2 data-i18n="settings.privacy">Datenschutz</h2>
+      <div class="legal-text">
+        <p><em>Stand: 14.08.2026</em></p>
+
+        <h3>1. Verantwortlicher</h3>
+        <p>
+          Daniel Schwarz<br />
+          WEB Schwarz<br />
+          Meergässle 8<br />
+          89180 Berghülen<br />
+          E-Mail: service@web-schwarz.de
+        </p>
+
+        <h3>2. Welche Daten verarbeitet diese App?</h3>
+        <p>„Wecker &amp; Ortswecker" ist bewusst lokal-first aufgebaut: Wecker, Stoppuhr, Timer, Intervall-Presets und Orts-Zeit-Wecker werden ausschließlich auf Ihrem Gerät gespeichert. Es gibt keinen eigenen Server/Cloud-Sync-Dienst des Anbieters.</p>
+        <p>Es gibt vier Ausnahmen, bei denen Daten das Gerät verlassen:</p>
+        <div class="legal-table-wrap">
+          <table class="legal-table">
+            <thead>
+              <tr><th>Zweck</th><th>Empfänger</th><th>Welche Daten</th><th>Rechtsgrundlage</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Adresssuche im Orts-Zeit-Wecker-Editor</td><td>Nominatim/OpenStreetMap-Geocoding-Dienst</td><td>Sucheingabe, technisch notwendig: IP-Adresse</td><td>Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)</td></tr>
+              <tr><td>Kartenkacheln im Orts-Zeit-Wecker-Editor</td><td>OpenStreetMap-Tile-Server</td><td>Sichtbarer Kartenausschnitt, technisch notwendig: IP-Adresse</td><td>Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)</td></tr>
+              <tr><td>Werbeanzeigen</td><td>Google AdMob</td><td>Werbekennung, Näherungs-/Standortdaten (bei Einwilligung), Geräteinformationen</td><td>Einwilligung (Art. 6 Abs. 1 lit. a DSGVO) über UMP-Consent-Formular</td></tr>
+              <tr><td>Kauf/Verwaltung der Pro-Version</td><td>Google Play Billing</td><td>Kaufbestätigung/Abo-Status Ihres Google-Kontos; keine Zahlungsdaten bei dieser App</td><td>Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Standortdaten für „Orts-Zeit-Wecker" (Geofencing) werden auf dem Gerät ausgewertet und nicht an den Anbieter dieser App übertragen.</p>
+
+        <h3>3. Standortdaten (Orts-Zeit-Wecker)</h3>
+        <ul>
+          <li><strong>Zweck:</strong> ausschließlich zur Auslösung der von Ihnen eingerichteten Orts-Zeit-Wecker.</li>
+          <li><strong>Speicherort:</strong> lokal auf dem Gerät.</li>
+          <li><strong>Hintergrund-Standort:</strong> für Alarme bei geschlossener App wird zusätzlich „Standort immer erlauben" benötigt, erst nach Aktivierung eines Orts-Zeit-Weckers mit vorheriger Erklärung angefragt. Jederzeit in den Android-Systemeinstellungen widerrufbar.</li>
+          <li><strong>Weitergabe:</strong> nicht an Dritte, außer bei Einwilligung zu personalisierter Werbung (grobe Standortnäherung an Google AdMob).</li>
+        </ul>
+
+        <h3>4. Benachrichtigungen</h3>
+        <p>Die App nutzt lokale Benachrichtigungen (kein Push-Dienst, keine Server-Übertragung), um Wecker, Timer und Orts-Zeit-Wecker auch im Hintergrund auszulösen.</p>
+
+        <h3>5. Werbung (Google AdMob)</h3>
+        <p>Beim Auslösen eines Orts-Zeit-Weckers wird eine Werbeanzeige über Google AdMob eingeblendet. Vor der ersten Anfrage holt die App über das Google User Messaging Platform (UMP) Ihre Einwilligung ein, sofern nach EWR-/DSGVO-Vorgaben erforderlich.</p>
+        <p>Verarbeitete Daten: Werbekennung (Advertising ID), Geräte-/App-Informationen, ggf. grobe Standortnäherung. Siehe <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googles Datenschutzerklärung</a>. Einwilligung jederzeit änderbar: Tab „Orts-Zeit-Wecker" → „Werbe-Einwilligung verwalten".</p>
+
+        <h3>6. Pro-Version (kostenpflichtiges Abo)</h3>
+        <p>Die App bietet optional ein werbefreies Jahres-Abo an. Kauf, Zahlungsabwicklung, Verlängerung und Kündigung laufen vollständig über Google Play Billing – diese App verarbeitet und speichert keine Zahlungsdaten. Verwaltung des Abos direkt im Play Store unter „Zahlungen und Abos". Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).</p>
+
+        <h3>7. Datenspeicherung und -löschung</h3>
+        <p>Alle Inhalte verbleiben lokal auf Ihrem Gerät, bis Sie sie löschen oder die App deinstallieren. Keine serverseitige Kopie beim Anbieter.</p>
+
+        <h3>8. Ihre Rechte</h3>
+        <p>Nach der DSGVO haben Sie u. a. das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21) sowie das Recht, eine Einwilligung jederzeit zu widerrufen (Art. 7 Abs. 3). Da App-Daten lokal liegen, können Sie Auskunft/Löschung direkt in der App bzw. über die Android-App-Einstellungen vornehmen. Für AdMob-Anfragen wenden Sie sich zusätzlich an Google sowie an die unter Punkt 1 genannte Kontaktadresse.</p>
+        <p>Sie haben zudem das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren.</p>
+
+        <h3>9. Änderungen dieser Datenschutzerklärung</h3>
+        <p>Diese Datenschutzerklärung wird angepasst, sobald sich die Datenverarbeitung durch neue App-Funktionen ändert.</p>
+      </div>
+      <div class="modal-actions tile-actions">
+        <button type="button" id="legal-privacy-close-btn" class="btn primary" data-i18n="common.close">Schließen</button>
       </div>
     </div>
   </div>
@@ -501,6 +626,7 @@
   <script src="js/notifications.js"></script>
   <script src="js/alarmSound.js"></script>
   <script src="js/ads.js"></script>
+  <script src="js/billing.js"></script>
   <script src="js/ringing.js"></script>
   <script src="js/alarms.js"></script>
   <script src="js/stopwatch.js"></script>
@@ -513,6 +639,8 @@
   <script src="js/locationRinging.js"></script>
   <script src="js/locationAlarms.js"></script>
   <script src="js/settingsData.js"></script>
+  <script src="js/settingsPro.js"></script>
+  <script src="js/legal.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -66,13 +66,11 @@
     return window.Capacitor && window.Capacitor.Plugins ? window.Capacitor.Plugins.AdMob : null;
   }
 
-  // Anknüpfungspunkt für ein späteres "Werbefrei"-In-App-Kauf (Phase 6,
-  // vollständige Umsetzung folgt separat). Liefert aktuell immer false, d.h.
-  // es wird ganz normal geladen/angezeigt. Sobald ein echter Kauf-Check
-  // existiert (z. B. Google Play Billing), reicht es, diese eine Funktion zu
-  // ersetzen - alle Aufrufer prüfen bereits vorher hier.
+  // Werbefrei-Status des Pro-Abos (siehe www/js/billing.js) - alle Aufrufer
+  // prüfen bereits vorher hier, sodass ein aktives Abo automatisch jede
+  // Anzeigenanfrage unterdrückt.
   function hasAdFreePurchase() {
-    return false;
+    return window.billing.isPro();
   }
 
   // Reihenfolge laut Plugin-Dokumentation zwingend: initialize -> requestConsentInfo
@@ -81,6 +79,7 @@
   // daher nicht optional.
   function init() {
     if (initPromise) return initPromise;
+    wirePurchaseEvents();
     if (!isNative() || !plugin()) {
       initPromise = Promise.resolve();
       return initPromise;
@@ -107,6 +106,21 @@
       });
 
     return initPromise;
+  }
+
+  // Entfernt einen gerade sichtbaren oder vorgeladenen Banner sofort, wenn
+  // waehrenddessen ein Pro-Abo-Kauf abgeschlossen wird (siehe
+  // www/js/billing.js) - ohne das wuerde eine schon geladene Anzeige bis zum
+  // naechsten preload/showRingingBanner()-Aufruf weiter angezeigt bleiben,
+  // obwohl hasAdFreePurchase() ab sofort true liefert.
+  function wirePurchaseEvents() {
+    window.billing.onStatusChange(function (active) {
+      if (!active || !isNative() || !plugin()) return;
+      if (bannerState === 'visible' || bannerState === 'ready') {
+        plugin().removeBanner().catch(function () {});
+        bannerState = 'idle';
+      }
+    });
   }
 
   function wireBannerEvents() {

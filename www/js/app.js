@@ -17,6 +17,8 @@
         window.locationAlarmsTab.init();
         window.ringSettings.init();
         window.settingsData.init();
+        window.settingsPro.init();
+        window.legal.init();
 
         // Zentrale Verteilung eines ueber einen Vollbild-Intent
         // ausgeloesten Alarms an das passende Tab-Modul (anhand
@@ -49,6 +51,7 @@
 
         window.Notify.createChannels();
         window.Notify.requestPermissions();
+        window.billing.init();
         window.ads.init();
       });
   });

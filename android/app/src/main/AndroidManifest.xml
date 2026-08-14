@@ -124,4 +124,8 @@
          damit selbst der (durch diese Berechtigung nun eigentlich nicht mehr
          nötige) Fallback-Pfad des Plugins Doze umgehen würde. -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Pro-Abo (werbefrei), siehe BillingBridgePlugin.java. Von Google Play
+         Billing selbst vorgeschrieben, unabhängig vom verwendeten Wrapper. -->
+    <uses-permission android:name="com.android.vending.BILLING" />
 </manifest>

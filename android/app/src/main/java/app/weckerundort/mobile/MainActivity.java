@@ -32,6 +32,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(LocationAlarmBridgePlugin.class);
+        registerPlugin(BillingBridgePlugin.class);
         super.onCreate(savedInstanceState);
         handleAlarmIntent(getIntent(), false);
     }

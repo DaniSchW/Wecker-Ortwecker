@@ -251,11 +251,10 @@ einem eigenen AdMob-Konto:
   Swipe-Bereich weiter unten – Vorkehrung gegen AdMob-Regeln zu
   Mindestabständen zwischen Anzeigen und interaktiven Elementen. Eine
   abschließende Prüfung ist nur auf einem echten Gerät sinnvoll möglich.
-- **IAP-Anknüpfungspunkt**: `ads.hasAdFreePurchase()` ist aktuell ein Stub
-  (liefert immer `false`), wird aber bereits vor jedem Laden/Anzeigen
-  geprüft. Für ein späteres „Werbefrei“-Feature reicht es, diese eine
-  Funktion durch einen echten Kauf-Check (z. B. Google Play Billing) zu
-  ersetzen.
+- **IAP-Anknüpfungspunkt**: `ads.hasAdFreePurchase()` ist inzwischen an einen
+  echten Kauf-Check angebunden (`window.billing.isPro()`, siehe Abschnitt
+  "Pro-Version: werbefreies Abo über Google Play Billing" weiter unten) –
+  wird weiterhin vor jedem Laden/Anzeigen geprüft.
 - **Getestet** wurde die neue Statemaschine (Vorladen → Wiederverwendung →
   Verwerfen bei Alter, Fehlerfall → Fallback, Timeout-Pfad) mit einem
   simulierten nativen AdMob-Plugin per Playwright – die eigentliche
@@ -384,10 +383,14 @@ Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
    „Werbe-Einwilligung verwalten" funktioniert.
 
 **Store-Listing / Rechtliches**
-10. `PRIVACY.md` mit echten Anbieterangaben füllen, rechtlich prüfen lassen,
-    öffentlich hosten, URL in der Play-Console-Store-Eintragung hinterlegen.
+10. `PRIVACY.md`/`IMPRESSUM.md` enthalten bereits echte Anbieterangaben und
+    sind als In-App-Modals eingebunden (Einstellungen → „Rechtliches") –
+    beides rechtlich prüfen lassen, sowie `PRIVACY.md` zusätzlich öffentlich
+    hosten (z. B. GitHub Pages) und die URL in der Play-Console-
+    Store-Eintragung hinterlegen (Play Console verlangt eine URL, ein
+    In-App-Modal allein reicht dort nicht).
 11. Play-Console Data-Safety-Abschnitt ausfüllen (Standort, Werbe-ID,
-    Geräte-ID – passend zu `PRIVACY.md`).
+    Geräte-ID, Kauf-/Abo-Status – passend zu `PRIVACY.md`).
 12. Store-Listing erstellen: Kurz-/Vollbeschreibung, Screenshots (auf
     echtem Gerät nach Punkt 3 aufnehmen), Content-Rating-Fragebogen
     (Werbung, Standortzugriff).
@@ -395,6 +398,9 @@ Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
     (`assets/icon-*.png`) ist ein erster fertiger Entwurf, kein
     zwingend endgültiges Markenzeichen; bei Bedarf durch professionelles
     Design ersetzen.
+14. Pro-Abo in der Play Console anlegen und auf einem echten Gerät mit
+    einem Lizenz-Testkonto durchkaufen (siehe Abschnitt "Pro-Version:
+    werbefreies Abo über Google Play Billing" weiter unten).
 
 ### Export-/Import-Funktion für Wecker-Daten (Sicherung/Wiederherstellung)
 
@@ -1026,6 +1032,85 @@ Löschen und Schlummern rufen `cancelStandardAlarm()` bzw. erneut
 verifizierbar in dieser Umgebung**: das tatsächliche Auslösen des
 Backup-Alarms durch `AlarmManager` bei komplett beendetem App-Prozess auf
 einem echten Gerät.
+
+### Impressum und Datenschutzerklärung
+
+Beide Texte liegen im Repo-Root (`IMPRESSUM.md`, `PRIVACY.md`, mit echten
+Anbieterangaben) und sind inhaltsgleich als In-App-Modals eingebunden
+(Einstellungen → „Rechtliches", siehe `www/index.html`
+`#legal-impressum-modal`/`#legal-privacy-modal` sowie `www/js/legal.js`).
+Bewusst nur In-App, keine separate Website – **wichtig vor Store-
+Einreichung**: Die Play Console verlangt im Store-Eintrag zusätzlich eine
+öffentlich erreichbare Datenschutz-**URL** (ein In-App-Modal reicht dort
+nicht aus). `PRIVACY.md` müsste dafür z. B. über GitHub Pages gehostet
+werden. Bei inhaltlichen Änderungen beide Stellen (Markdown-Datei + Modal in
+`index.html`) synchron halten – siehe Hinweis-Kommentar in `PRIVACY.md`.
+
+### Pro-Version: werbefreies Abo über Google Play Billing
+
+Optionales Jahres-Abo (1 €/Jahr), das die AdMob-Werbung beim Auslösen von
+Orts-Zeit-Weckern ausblendet. Bewusst **direkt über Google Play Billing**
+umgesetzt, ohne Drittanbieter-SDK (z. B. RevenueCat) und ohne eigenes
+Backend zur Kauf-Validierung: Bei diesem Preis/Funktionsumfang (ein reines
+„werbefrei"-Flag) steht der Aufwand einer serverseitigen Quittungsprüfung in
+keinem Verhältnis zum Betrugsrisiko. Kauf, Zahlungsabwicklung, Verlängerung
+und Kündigung laufen vollständig im Play Store selbst ab.
+
+- **Native Seite** (`BillingBridgePlugin.java`): eigener, schlanker
+  Capacitor-Plugin-Wrapper direkt um `com.android.billingclient:billing`
+  (Version siehe `android/variables.gradle`, `billingClientVersion` – Google
+  verlangt ab 31.08.2026 für neue Einreichungen/Updates mindestens Version
+  8). Kein fertiges Community-Plugin verwendet: Das einzige zum
+  Zeitpunkt der Implementierung passende (`capacitor-billing` auf npm) bot
+  keine Möglichkeit, bereits bestehende Käufe abzufragen
+  (`queryPurchasesAsync`) – ohne das ließe sich weder nach einer
+  Neuinstallation noch nach einem Geräte-/Konto-Wechsel zuverlässig
+  feststellen, ob ein Abo aktiv ist.
+  - `getStatus()`: fragt `queryPurchasesAsync(SUBS)` beim Play-Store-eigenen
+    `BillingClient` ab – das funktioniert immer korrekt für das aktuell
+    angemeldete Google-Konto, unabhängig vom lokalen App-Speicher.
+  - `purchase()`: lädt die Produktdetails (`queryProductDetailsAsync`) und
+    startet den nativen Kauf-Dialog (`launchBillingFlow`). Das eigentliche
+    Ergebnis kommt asynchron über `onPurchasesUpdated()` und wird per
+    `proStatusChanged`-Event an JS gemeldet.
+  - Ein erfolgreicher Kauf wird automatisch bestätigt (`acknowledgePurchase`)
+    – ohne diesen Schritt storniert Play Billing den Kauf nach 3 Tagen von
+    selbst.
+  - `openManageSubscription()`: öffnet direkt die Play-Store-eigene
+    Abo-Verwaltung (`play.google.com/store/account/subscriptions`) – bewusst
+    KEINE eigene Kündigen/Pausieren-UI, das übernimmt Google vollständig.
+- **JS-Seite** (`www/js/billing.js`): hält einen synchron abfragbaren,
+  zwischengespeicherten Status (`isPro()`) vor, analog zum
+  `canRequestAds`-Muster in `ads.js`, damit `ads.hasAdFreePurchase()` nicht
+  auf ein Promise warten muss. `www/js/settingsPro.js` verdrahtet den
+  „Pro-Version"-Abschnitt im Einstellungen-Modal (Kauf-/Verwalten-Button,
+  Statustext). `ads.js` blendet zusätzlich eine gerade sichtbare/vorgeladene
+  Anzeige sofort aus, falls währenddessen ein Kauf abgeschlossen wird.
+
+**Pro-Version in der Play Console einrichten** (vor Store-Release nötig):
+1. Play Console → Monetarisierung → Abos → neues Abo mit der Produkt-ID
+   `pro_jahr` anlegen (muss exakt `BillingBridgePlugin.PRODUCT_ID_PRO`
+   entsprechen).
+2. Einen Basisplan mit jährlicher Abrechnung (`P1Y`) und Preis 1,00 € für
+   den Zielmarkt (Deutschland/EWR) anlegen und aktivieren.
+3. Lizenz-Testkonto (Play Console → Einstellungen → Lizenztests) mit dem
+   eigenen Google-Konto hinterlegen, um Testkäufe ohne echte Abbuchung
+   durchzuführen.
+4. Auf einem echten Gerät mit diesem Test-Konto den kompletten Ablauf
+   verifizieren: Kauf-Dialog erscheint, `proStatusChanged`-Event blendet
+   die Werbung sofort aus, „Abo verwalten" öffnet die richtige Play-Store-
+   Seite, App-Neuinstallation erkennt das bestehende Abo korrekt wieder
+   (`getStatus()` beim Start).
+5. Play-Console Data-Safety-Abschnitt um „Kaufhistorie"/„finanzielle
+   Informationen" (verarbeitet von Google Play, nicht von dieser App)
+   ergänzen.
+
+**Nicht verifizierbar in dieser Umgebung**: der komplette Kauf-Ablauf
+selbst, da dafür ein Play-Console-Produkt, ein echtes Gerät und ein
+Google-Konto nötig sind. Getestet wurde die JS-/UI-Seite per Playwright
+(gemockte `BillingBridge`-Plugin-Antworten): Kauf-/Verwalten-Button-
+Sichtbarkeit je nach Status, `hasAdFreePurchase()` folgt `isPro()`, ein
+simuliertes `proStatusChanged`-Event aktualisiert die UI sofort.
 
 ## Entwicklung
 

@@ -511,6 +511,63 @@ body {
   font-weight: 500;
 }
 
+.legal-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.legal-text h3 {
+  margin: 16px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.legal-text h3:first-child {
+  margin-top: 0;
+}
+
+.legal-text p,
+.legal-text ul {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+}
+
+.legal-text ul {
+  padding-left: 20px;
+}
+
+.legal-text a {
+  color: var(--color-accent);
+}
+
+.legal-table-wrap {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.legal-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 560px;
+  font-size: 12px;
+}
+
+.legal-table th,
+.legal-table td {
+  border: 1px solid var(--color-border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--color-text-muted);
+}
+
+.legal-table th {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 .field {
   display: flex;
   flex-direction: column;
