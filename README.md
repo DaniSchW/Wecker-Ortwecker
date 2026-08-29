@@ -313,8 +313,11 @@ Umgebung möglich ist:
   Möglichkeit, einen minifizierten Build tatsächlich zu testen, wäre das
   Risiko eines kaputten Release-Builds größer als der Vorteil einer
   kleineren APK.
-- **Versionsnummern**: `versionCode 1` / `versionName "1.0.0"`
-  (`android/app/build.gradle`), passend zu `package.json`.
+- **Versionsnummern**: `versionCode 2` / `versionName "1.1.0"`
+  (`android/app/build.gradle`), passend zu `package.json`. `versionCode` muss
+  bei jeder Play-Store-Einreichung um mindestens 1 erhöht werden (Play
+  Console lehnt sonst den Upload ab) - `versionName` ist die für Nutzer
+  sichtbare Versionsnummer und frei wählbar, hier an Semver angelehnt.
 - **Datenschutzerklärung** (`PRIVACY.md`): Entwurf basierend auf den
   tatsächlichen Datenflüssen der App (Standort lokal ausgewertet,
   Nominatim/OSM-Netzwerkanfragen, AdMob/UMP). Mit deutlich markierten
