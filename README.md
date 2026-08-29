@@ -324,6 +324,49 @@ Umgebung möglich ist:
   erreichbaren URL hosten (Play Store verlangt eine URL, keine Datei im
   Repo).
 
+> **Update**: Der Signing-Key wurde inzwischen erzeugt (siehe
+> `android/keystore.properties`, git-ignoriert) und liegt außerhalb des
+> Repos beim Projektinhaber. Ebenso sind Impressum/Datenschutz inzwischen
+> mit echten Angaben befüllt (siehe `IMPRESSUM.md`/`PRIVACY.md`).
+
+### Signierten Release-Build über GitHub Actions bauen
+
+Lokale `./gradlew bundleRelease`-Builds sind in der Entwicklungsumgebung,
+in der dieses Projekt entstanden ist, nicht möglich (Google-SDK-Download-
+Server per Netzwerk-Policy blockiert, siehe Kommentar in
+`.github/workflows/build-debug-apk.yml`). Für ein signiertes `.aab` gibt es
+daher `.github/workflows/build-release-aab.yml` - ein separater,
+**ausschließlich manuell auslösbarer** Workflow (`workflow_dispatch`, kein
+automatischer Push-Trigger wie beim Debug-APK-Workflow), da ein
+Release-Build eine bewusste Aktion sein soll.
+
+Der Signing-Key selbst darf **niemals** als Datei oder Klartext ins Repo
+oder in einen Chat-Verlauf gelangen - er wird stattdessen als GitHub
+Actions **Repository-Secret** hinterlegt und nur zur Laufzeit des Workflows
+aus dem Secret rekonstruiert (danach sofort wieder gelöscht, siehe Schritt
+„Remove keystore from runner" im Workflow).
+
+**Einmalige Einrichtung** (in GitHub: Repository → Settings → Secrets and
+variables → Actions → „New repository secret"), lokal auf dem eigenen
+Rechner ausgeführt, NIE die Ausgabe in einen Chat einfügen:
+
+1. `ANDROID_KEYSTORE_BASE64`: Ausgabe von
+   `base64 -w0 wecker-ortswecker-release.jks` (Linux/macOS mit GNU coreutils;
+   unter macOS ggf. `base64 -i wecker-ortswecker-release.jks` ohne `-w0`)
+   als Secret-Wert einfügen.
+2. `ANDROID_KEYSTORE_STORE_PASSWORD`: Wert von `storePassword` aus der
+   eigenen `android/keystore.properties`.
+3. `ANDROID_KEYSTORE_KEY_ALIAS`: Wert von `keyAlias` aus derselben Datei.
+4. `ANDROID_KEYSTORE_KEY_PASSWORD`: Wert von `keyPassword` aus derselben
+   Datei.
+
+Danach den Workflow auslösen: GitHub → Actions → „Build Signed Release AAB"
+→ „Run workflow" (oder Claude bitten, ihn per `workflow_dispatch`
+anzustoßen - dafür werden die Secret-**Werte** nicht benötigt, nur die
+Namen müssen bereits als Secrets existieren). Ergebnis liegt als
+Workflow-Artefakt `wecker-ortswecker-release-aab` bereit
+(`android/app/build/outputs/bundle/release/app-release.aab`).
+
 ### Konsolidierte Checkliste vor der Store-Veröffentlichung
 
 Fasst alle über die Phasen verteilten „vor Release nötig"-Punkte zusammen:
