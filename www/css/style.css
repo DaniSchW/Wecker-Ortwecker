@@ -132,6 +132,13 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  /* Grid-Items haben per Default min-width:auto (= Inhalts-Mindestbreite
+     statt 0) - enthaelt eine Kachel Text mit white-space:nowrap (z. B.
+     .location-tile-title), der breiter als die verfuegbare 1fr-Spalte ist,
+     wuerde .tile-grid sonst ueber die Bildschirmbreite hinaus wachsen und
+     die zweite Spalte aus dem sichtbaren Bereich draengen, statt den Text
+     per text-overflow:ellipsis abzuschneiden. */
+  min-width: 0;
 }
 
 .tile-add {
@@ -796,6 +803,13 @@ body.is-ringing .bottom-nav {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Sitzt als Flex-Item neben dem Schalter in .alarm-tile-top - ohne
+     min-width:0 verhindert die automatische Mindestbreite (= Breite des
+     ungebrochenen Textes) das Schrumpfen, wodurch text-overflow:ellipsis
+     nie greift und ein langer Titel die Kachel (und damit das Grid) über
+     den Bildschirmrand hinaus drückt. */
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .location-tile-meta {
