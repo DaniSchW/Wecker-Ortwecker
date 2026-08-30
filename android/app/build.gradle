@@ -22,8 +22,12 @@ android {
         // ohne inhaltliche Änderung) um mindestens 1 erhöhen - die Play
         // Console lehnt sonst den Upload ab. versionName nur bei einem
         // tatsächlichen inhaltlichen Release mitziehen, nicht bei jedem
-        // Build.
-        versionCode 3
+        // Build. ACHTUNG: Ein einmal hochgeladener versionCode ist in der
+        // Play Console DAUERHAFT verbraucht - auch wenn er nur in einen
+        // Entwurf hochgeladen und danach wieder aus dem Release entfernt
+        // wurde. Es reicht NICHT, einfach nochmal denselben Wert zu
+        // versuchen.
+        versionCode 4
         versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
