@@ -18,7 +18,12 @@ android {
         applicationId "app.weckerundort.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
+        // WICHTIG: versionCode vor JEDEM neuen signierten .aab-Build (auch
+        // ohne inhaltliche Änderung) um mindestens 1 erhöhen - die Play
+        // Console lehnt sonst den Upload ab. versionName nur bei einem
+        // tatsächlichen inhaltlichen Release mitziehen, nicht bei jedem
+        // Build.
+        versionCode 3
         versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
